@@ -1,25 +1,42 @@
-/doc/*
 **/bin/*
 bin/
+/doc/*
+test_out/
+tmp/
+.directory
+.gradle
+.loadpath
+.metadata
+*.pydevproject
+*.bak
+*.swp
+*.tmp
+*~.nib
+local.properties
+
+# Maven #
+#########
+log/
 target/
+
+# Eclipse #
+###########
+/.project
+.settings/
+.externalToolBuilders/
+*.launch
+
+# Intellij #
+############
+.idea/
 *.iml
 *.ipr
 *.iws
-keystore
-/.idea/
-/.idea/*
-.idea/
-.idea/*
-test_out/
-.directory
-*.DS_Store
-.settings
-.gitignore
 
 # Compiled source #
 ###################
-*.com
 *.class
+*.com
 *.dll
 *.exe
 *.o
@@ -46,12 +63,14 @@ test_out/
 
 # OS generated files #
 ######################
+._*
+.AppleDouble
 .DS_Store
 .DS_Store?
-._*
+.LSOverride
 .Spotlight-V100
 .Trashes
 Icon?
 ehthumbs.db
 Thumbs.db
-/.project
+Desktop.ini

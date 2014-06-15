@@ -13,29 +13,29 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapResource;
+import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
-import org.eclipse.californium.core.server.Server;
 import org.eclipse.californium.core.server.resources.CoapExchange;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 /**
  * This resource contains two subresources: shutdown and restart. Send a POST
  * request to subresource shutdown to stop the server. Send a POST request to
  * the subresource restart to restart the server.
  */
-public class RunningResource extends ResourceBase {
+public class RunningResource extends CoapResource {
 
-	private Server server;
+	private CoapServer server;
 	
 	private int restartCount;
 	
-	public RunningResource(String name, Server s) {
+	public RunningResource(String name, CoapServer s) {
 		super(name);
 		this.server = s;
 		
-		add(new ResourceBase("shutdown") {
+		add(new CoapResource("shutdown") {
 			public void handlePOST(CoapExchange exchange) {
 				exchange.respond(ResponseCode.CHANGED);
 				sleep(100);
@@ -43,7 +43,7 @@ public class RunningResource extends ResourceBase {
 			}
 		});
 		
-		add(new ResourceBase("restart") {
+		add(new CoapResource("restart") {
 			public void handlePOST(CoapExchange exchange) {
 				restartCount++;
 				server.stop();

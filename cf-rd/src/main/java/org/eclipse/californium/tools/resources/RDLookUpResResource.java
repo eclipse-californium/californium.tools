@@ -13,27 +13,26 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.TreeSet;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 
-public class RDLookUpEPResource extends ResourceBase {
+public class RDLookUpResResource extends CoapResource {
 
 	private RDResource rdResource = null;
 	
-	public RDLookUpEPResource(String resourceIdentifier, RDResource rd) {
+	public RDLookUpResResource(String resourceIdentifier, RDResource rd) {
 		super(resourceIdentifier);
 		this.rdResource = rd;
 	}
@@ -42,43 +41,47 @@ public class RDLookUpEPResource extends ResourceBase {
 	@Override
 	public void handleGET(CoapExchange exchange) {
 		Collection<Resource> resources = rdResource.getChildren();
-		List<String> query = exchange.getRequestOptions().getURIQueries();
 		String result = "";
 		String domainQuery = "";
 		String endpointQuery = "";
-		TreeSet<String> endpointTypeQuery = new TreeSet<String>();
+		List<String> toRemove = new ArrayList<String>(); 
 		
-		for (String q:query) {
+		List<String> query = exchange.getRequestOptions().getURIQueries();
+		
+		for (String q : query) {
 			LinkAttribute attr = LinkAttribute.parse(q);
 			if(attr.getName().equals(LinkFormat.DOMAIN)){
-				domainQuery = attr.getValue();
+				domainQuery=attr.getValue();
+				if(domainQuery==null){
+					exchange.respond(ResponseCode.BAD_REQUEST);
+					return;
+				}
+				toRemove.add(q);
 			}
 			if(attr.getName().equals(LinkFormat.END_POINT)){
 				endpointQuery = attr.getValue();
-				
-			}
-			if(attr.getName().equals(LinkFormat.END_POINT_TYPE)){
-				Collections.addAll(endpointTypeQuery, attr.getValue().split(" "));
+				if(endpointQuery==null){
+					exchange.respond(ResponseCode.BAD_REQUEST);
+					return;
+				}
+				toRemove.add(q);
 			}
 		}
 		
+		
 		Iterator<Resource>  resIt = resources.iterator();
+		System.out.println(endpointQuery);
+				
+		query.removeAll(toRemove);
 		
 		while (resIt.hasNext()){
 			Resource res = resIt.next();
 			if (res.getClass() == RDNodeResource.class){
 				RDNodeResource node = (RDNodeResource) res;
 				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain())) && 
-					 (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointIdentifier())) &&
-					 (endpointTypeQuery.isEmpty() || endpointTypeQuery.contains(node.getEndpointType()))) {
-				
-					result += "<"+node.getContext()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointIdentifier()+"\"";
-					result += ";"+LinkFormat.DOMAIN+"=\""+node.getDomain()+"\"";
-					if(!node.getEndpointType().isEmpty()){
-						result += ";"+LinkFormat.RESOURCE_TYPE+"=\""+node.getEndpointType()+"\"";
-					}
-							
-					result += ",";
+					 (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointIdentifier())) ) {
+					String link = node.toLinkFormat(query);
+					result += (!link.isEmpty()) ? link+"," : ""; 
 				}
 			}
 		}
@@ -86,7 +89,7 @@ public class RDLookUpEPResource extends ResourceBase {
 			exchange.respond(ResponseCode.NOT_FOUND);
 		}
 		else{
-			exchange.respond(ResponseCode.CONTENT, result.substring(0,result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
+			exchange.respond(ResponseCode.CONTENT, result.substring(0,result.length()-1),MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 		}
 		
 	}

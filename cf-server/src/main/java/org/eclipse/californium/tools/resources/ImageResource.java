@@ -13,26 +13,26 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.ResourceAttributes;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 
 /**
  * This resource responds with an image to GET requests. Use the ACCEPT option
  * to choose between the JPG and PNG file.
  */
-public class ImageResource extends ResourceBase {
+public class ImageResource extends CoapResource {
 
 	private String filePath = "src\\main\\resources\\data\\image\\";
 	private String fileName = "image";

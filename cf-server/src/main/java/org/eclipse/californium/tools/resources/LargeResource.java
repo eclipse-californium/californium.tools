@@ -13,16 +13,16 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.server.resources.CoapExchange;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 /**
  * This class implements a resource that returns a larger amount of
  * data on GET requests in order to test blockwise transfers.
  */
-public class LargeResource extends ResourceBase {
+public class LargeResource extends CoapResource {
 
 	private String payload = getPayload();
 	

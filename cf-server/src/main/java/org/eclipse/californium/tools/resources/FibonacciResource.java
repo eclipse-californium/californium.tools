@@ -13,14 +13,14 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 
 /**
@@ -28,7 +28,7 @@ import org.eclipse.californium.core.server.resources.ResourceBase;
  * a lot of computing power to respond to a request. Use the query ?n=20 to
  * compute the 20. Fibonacci number, e.g.: coap://localhost:5683/fibonacci?n=20.
  */
-public class FibonacciResource extends ResourceBase {
+public class FibonacciResource extends CoapResource {
 
 	private Pattern pattern;
 	

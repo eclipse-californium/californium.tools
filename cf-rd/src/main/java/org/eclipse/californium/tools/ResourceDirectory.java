@@ -13,20 +13,20 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples;
+package org.eclipse.californium.tools;
 
 import java.net.SocketException;
 
-import org.eclipse.californium.core.server.Server;
-import org.eclipse.californium.examples.resources.RDLookUpTopResource;
-import org.eclipse.californium.examples.resources.RDResource;
-import org.eclipse.californium.examples.resources.RDTagTopResource;
+import org.eclipse.californium.core.CoapServer;
+import org.eclipse.californium.tools.resources.RDLookUpTopResource;
+import org.eclipse.californium.tools.resources.RDResource;
+import org.eclipse.californium.tools.resources.RDTagTopResource;
 
 /**
  * The class ResourceDirectory provides an experimental RD
  * as described in draft-ietf-core-resource-directory-00.
  */
-public class ResourceDirectory extends Server {
+public class ResourceDirectory extends CoapServer {
     
     // exit codes for runtime errors
     public static final int ERR_INIT_FAILED = 1;
@@ -36,7 +36,7 @@ public class ResourceDirectory extends Server {
         // create server
         try {
             
-            Server server = new ResourceDirectory();
+            CoapServer server = new ResourceDirectory();
             server.start();
             
             System.out.printf(ResourceDirectory.class.getSimpleName()+" listening on port %d.\n", server.getEndpoints().get(0).getAddress().getPort());

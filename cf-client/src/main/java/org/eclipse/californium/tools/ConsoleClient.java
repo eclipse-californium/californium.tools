@@ -233,7 +233,7 @@ public class ConsoleClient {
 	 * Outputs user guide of this program.
 	 */
 	public static void printInfo() {
-		System.out.println("Californium (Cf) Example Client");
+		System.out.println("Californium (Cf) Console Client");
 		System.out.println("(c) 2014, Institute for Pervasive Computing, ETH Zurich");
 		System.out.println();
 		System.out.println("Usage: " + ConsoleClient.class.getSimpleName() + " [-l] METHOD URI [PAYLOAD]");
@@ -245,8 +245,8 @@ public class ConsoleClient {
 		System.out.println("           (automatic for OBSERVE and separate responses)");
 		System.out.println();
 		System.out.println("Examples:");
-		System.out.println("  ExampleClient DISCOVER coap://localhost");
-		System.out.println("  ExampleClient POST coap://vs0.inf.ethz.ch:5683/storage my data");
+		System.out.println("  " + ConsoleClient.class.getSimpleName() + " DISCOVER coap://localhost");
+		System.out.println("  " + ConsoleClient.class.getSimpleName() + " PUT coap://iot.eclipse.org:5683/large-put my data");
 	}
 
 	/*

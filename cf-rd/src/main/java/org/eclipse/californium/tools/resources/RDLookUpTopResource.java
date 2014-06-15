@@ -13,12 +13,12 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
-import org.eclipse.californium.core.server.resources.ResourceBase;
+import org.eclipse.californium.core.CoapResource;
 
 
-public class RDLookUpTopResource extends ResourceBase {
+public class RDLookUpTopResource extends CoapResource {
 	
 //	private RDResource rdResource = null;
 	

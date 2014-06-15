@@ -13,18 +13,18 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 
 /**
@@ -47,7 +47,7 @@ import org.eclipse.californium.core.server.resources.ResourceBase;
  * request and stare "foo". If the client sends a consecutive GET request to the
  * URI storage/A/B/C, resource C will respond with the payload "foo".
  */
-public class StorageResource extends ResourceBase {
+public class StorageResource extends CoapResource {
 
 	private String content;
 	

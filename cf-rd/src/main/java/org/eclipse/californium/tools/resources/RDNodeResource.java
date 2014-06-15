@@ -13,7 +13,7 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +22,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
@@ -30,10 +31,9 @@ import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 
-public class RDNodeResource extends ResourceBase {
+public class RDNodeResource extends CoapResource {
 
 	private static final Logger LOGGER = Logger.getLogger(RDNodeResource.class.getCanonicalName());
 	
@@ -128,20 +128,20 @@ public class RDNodeResource extends ResourceBase {
 	 * humidity. If the path is /readings/temp, temp will be a subResource
 	 * of readings, which is a subResource of the node.
 	 */
-	public ResourceBase addNodeResource(String path) {
+	public CoapResource addNodeResource(String path) {
 		Scanner scanner = new Scanner(path);
 		scanner.useDelimiter("/");
 		String next = "";
 		boolean resourceExist = false;
 		Resource resource = this; // It's the resource that represents the endpoint
 		
-		ResourceBase subResource = null;
+		CoapResource subResource = null;
 		while (scanner.hasNext()) {
 			resourceExist = false;
 			next = scanner.next();
 			for (Resource res : resource.getChildren()) {
 				if (res.getName().equals(next)) {
-					subResource = (ResourceBase) res;
+					subResource = (CoapResource) res;
 					resourceExist = true;
 				}
 			}
@@ -265,7 +265,7 @@ public class RDNodeResource extends ResourceBase {
 				return false;
 			}
 			
-			ResourceBase resource = addNodeResource(path);
+			CoapResource resource = addNodeResource(path);
 			/*
 			 * Since created the subResource, get all the attributes from
 			 * the payload. Each parameter is separated by a ";".

@@ -13,15 +13,15 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.server.resources.CoapExchange;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 /**
  * This resource responds with a kind "hello world" to GET requests.
  */
-public class HelloWorldResource extends ResourceBase {
+public class HelloWorldResource extends CoapResource {
 
 	public HelloWorldResource(String name) {
 		super(name);

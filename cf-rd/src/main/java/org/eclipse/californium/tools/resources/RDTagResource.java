@@ -13,15 +13,15 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-import org.eclipse.californium.core.server.resources.ResourceBase;
+import org.eclipse.californium.core.CoapResource;
 
 
-public class RDTagResource extends ResourceBase {
+public class RDTagResource extends CoapResource {
 
 	private HashMap<String, String> tagsMap;
 	private RDNodeResource parentNode;

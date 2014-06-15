@@ -13,21 +13,21 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.network.Exchange;
 import org.eclipse.californium.core.server.resources.Resource;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 /**
  * This resource responds with the data from a request in its payload. This
  * resource responds to GET, POST, PUT and DELETE requests.
  */
-public class MirrorResource extends ResourceBase {
+public class MirrorResource extends CoapResource {
 
 	public MirrorResource(String name) {
 		super(name);

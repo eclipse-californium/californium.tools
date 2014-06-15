@@ -13,22 +13,22 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples.resources;
+package org.eclipse.californium.tools.resources;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 
+import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
-import org.eclipse.californium.core.server.resources.ResourceBase;
 
 
-public class RDLookUpDomainResource extends ResourceBase {
+public class RDLookUpDomainResource extends CoapResource {
 
 	private RDResource rdResource = null;
 	

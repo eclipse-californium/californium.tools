@@ -13,20 +13,20 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  ******************************************************************************/
-package org.eclipse.californium.examples;
+package org.eclipse.californium.tools;
 
 import java.util.concurrent.Executors;
 
+import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
-import org.eclipse.californium.core.server.Server;
 
-import org.eclipse.californium.examples.resources.FibonacciResource;
-import org.eclipse.californium.examples.resources.HelloWorldResource;
-import org.eclipse.californium.examples.resources.ImageResource;
-import org.eclipse.californium.examples.resources.LargeResource;
-import org.eclipse.californium.examples.resources.MirrorResource;
-import org.eclipse.californium.examples.resources.StorageResource;
+import org.eclipse.californium.tools.resources.FibonacciResource;
+import org.eclipse.californium.tools.resources.HelloWorldResource;
+import org.eclipse.californium.tools.resources.ImageResource;
+import org.eclipse.californium.tools.resources.LargeResource;
+import org.eclipse.californium.tools.resources.MirrorResource;
+import org.eclipse.californium.tools.resources.StorageResource;
 
 /**
  * This is an example server that contains a few resources for demonstration.
@@ -34,7 +34,7 @@ import org.eclipse.californium.examples.resources.StorageResource;
 public class ExampleServer {
 	
 	public static void main(String[] args) throws Exception {
-		Server server = new Server();
+		CoapServer server = new CoapServer();
 		server.setExecutor(Executors.newScheduledThreadPool(4));
 		
 		server.add(new HelloWorldResource("hello"));
