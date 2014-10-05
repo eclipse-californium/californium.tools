@@ -308,9 +308,8 @@ public class RDNodeResource extends CoapResource {
 	public String toLinkFormatItem(Resource resource) {
 		StringBuilder linkFormat = new StringBuilder();
 
-//TODO return absolute link
 		linkFormat.append("<"+getContext());
-		linkFormat.append(resource.getPath().substring(this.getPath().length()));
+		linkFormat.append(resource.getPath().substring(this.getPath().length()+this.getName().length())+resource.getName());
 		linkFormat.append(">");
 		
 		return linkFormat.append( LinkFormat.serializeResource(resource).toString().replaceFirst("<.+>", "") ).toString();
