@@ -15,6 +15,7 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -108,11 +109,16 @@ public class RDNodeResource extends CoapResource {
 
 		// TODO check with draft authors if update should be atomic
 		if (newContext.equals("")) {
-			context = "coap://" + request.getSource()+":"+request.getSourcePort();
+			InetAddress source = request.getSource();
+			String host = source.getHostName();
+			if (host == null) {
+				host = source.getHostAddress();
+			}
+			context = "coap://" + host + ":" + request.getSourcePort();
 		} else {
 			Request checkRequest = Request.newGet();
 
-			try { 
+			try {
 				checkRequest.setURI(context);
 			} catch (Exception e) {
 				LOGGER.warning(e.toString());
