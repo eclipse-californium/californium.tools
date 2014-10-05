@@ -277,6 +277,10 @@ public class RDNodeResource extends CoapResource {
 			 * the payload. Each parameter is separated by a ";".
 			 */
 			scanner.useDelimiter(";");
+			//Clear attributes to make registration idempotent
+			for(String attribute:resource.getAttributes().getAttributeKeySet()){
+				resource.getAttributes().clearAttribute(attribute);
+			}
 			while (scanner.hasNext()) {
 				LinkAttribute attr = LinkAttribute.parse(scanner.next());
 				if (attr.getValue() == null)
