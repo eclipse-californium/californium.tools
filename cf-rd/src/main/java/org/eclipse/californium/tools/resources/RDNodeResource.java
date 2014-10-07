@@ -15,6 +15,7 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -108,11 +109,16 @@ public class RDNodeResource extends CoapResource {
 
 		// TODO check with draft authors if update should be atomic
 		if (newContext.equals("")) {
-			context = "coap://" + request.getSource()+":"+request.getSourcePort();
+			InetAddress source = request.getSource();
+			String host = source.getHostName();
+			if (host == null) {
+				host = source.getHostAddress();
+			}
+			context = "coap://" + host + ":" + request.getSourcePort();
 		} else {
 			Request checkRequest = Request.newGet();
 
-			try { 
+			try {
 				checkRequest.setURI(context);
 			} catch (Exception e) {
 				LOGGER.warning(e.toString());
@@ -271,6 +277,10 @@ public class RDNodeResource extends CoapResource {
 			 * the payload. Each parameter is separated by a ";".
 			 */
 			scanner.useDelimiter(";");
+			//Clear attributes to make registration idempotent
+			for(String attribute:resource.getAttributes().getAttributeKeySet()){
+				resource.getAttributes().clearAttribute(attribute);
+			}
 			while (scanner.hasNext()) {
 				LinkAttribute attr = LinkAttribute.parse(scanner.next());
 				if (attr.getValue() == null)
@@ -308,9 +318,8 @@ public class RDNodeResource extends CoapResource {
 	public String toLinkFormatItem(Resource resource) {
 		StringBuilder linkFormat = new StringBuilder();
 
-//TODO return absolute link
 		linkFormat.append("<"+getContext());
-		linkFormat.append(resource.getPath().substring(this.getPath().length()));
+		linkFormat.append(resource.getPath().substring(this.getPath().length()+this.getName().length())+resource.getName());
 		linkFormat.append(">");
 		
 		return linkFormat.append( LinkFormat.serializeResource(resource).toString().replaceFirst("<.+>", "") ).toString();
