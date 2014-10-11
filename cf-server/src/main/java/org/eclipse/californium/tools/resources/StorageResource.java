@@ -33,11 +33,11 @@ import org.eclipse.californium.core.server.resources.Resource;
  * resource can be though off as having all possible children.
  * <p>
  * <ul>
- * <li />A GET request receives the currently stored data within the target
+ * <li>A GET request receives the currently stored data within the target
  * resource.
- * <li />A POST request creates the specified resources from the payload.
- * <li />A PUT request stores the payload within the target resource.
- * <li />A DELETE request deletes the target resource.
+ * <li>A POST request creates the specified resources from the payload.
+ * <li>A PUT request stores the payload within the target resource.
+ * <li>A DELETE request deletes the target resource.
  * </ul>
  * <p>
  * Assume a single instance of this resource called "storage". Assume a client

@@ -15,10 +15,15 @@
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.util.logging.Level;
 
 import org.eclipse.californium.core.CaliforniumLogger;
@@ -32,7 +37,6 @@ import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.EndpointManager.ClientMessageDeliverer;
 import org.eclipse.californium.core.network.config.NetworkConfig;
-
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.ScandiumLogger;
 
@@ -65,6 +69,10 @@ public class ConsoleClient {
 		ScandiumLogger.setLevel(Level.FINER);
 	}
 	
+	// the trust store file used for DTLS server authentication
+    private static final String TRUST_STORE_LOCATION = "certs/trustStore.jks";
+	private static final String TRUST_STORE_PASSWORD = "rootPass";
+	
 	// resource URI path used for discovery
 	private static final String DISCOVERY_RESOURCE = "/.well-known/core";
 
@@ -94,7 +102,7 @@ public class ConsoleClient {
 	/*
 	 * Main method of this client.
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, GeneralSecurityException {
 		
 		// display help if no parameters specified
 		if (args.length == 0) {
@@ -164,7 +172,16 @@ public class ConsoleClient {
 		request.getOptions().setContentFormat(MediaTypeRegistry.TEXT_PLAIN);
 		
 		if (request.getScheme().equals(CoAP.COAP_SECURE_URI_SCHEME)) {
-			dtlsEndpoint = new CoAPEndpoint(new DTLSConnector(new InetSocketAddress(0)), NetworkConfig.getStandard());
+		    
+		    // load trust store
+            KeyStore trustStore = KeyStore.getInstance("JKS");
+            InputStream inTrust = new FileInputStream(TRUST_STORE_LOCATION);
+            trustStore.load(inTrust, TRUST_STORE_PASSWORD.toCharArray());
+            
+            // You can load multiple certificates if needed
+            Certificate[] trustedCertificates = new Certificate[1];
+            trustedCertificates[0] = trustStore.getCertificate("root");
+			dtlsEndpoint = new CoAPEndpoint(new DTLSConnector(new InetSocketAddress(0), trustedCertificates), NetworkConfig.getStandard());
 			dtlsEndpoint.setMessageDeliverer(new ClientMessageDeliverer());
 			dtlsEndpoint.start();
 			EndpointManager.getEndpointManager().setDefaultSecureEndpoint(dtlsEndpoint);
