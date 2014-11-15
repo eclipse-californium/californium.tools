@@ -48,7 +48,7 @@ public class RDLookUpDomainResource extends CoapResource {
 		Iterator<Resource>  resIt = resources.iterator();
 		String result = "";
 		
-		List<String> queries = exchange.getRequestOptions().getURIQueries();
+		List<String> queries = exchange.getRequestOptions().getUriQuery();
 		for (String query:queries) {
 			LinkAttribute attr = LinkAttribute.parse(query);
 			if (attr.getName().equals(LinkFormat.DOMAIN))

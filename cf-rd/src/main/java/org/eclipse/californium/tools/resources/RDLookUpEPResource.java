@@ -42,7 +42,7 @@ public class RDLookUpEPResource extends CoapResource {
 	@Override
 	public void handleGET(CoapExchange exchange) {
 		Collection<Resource> resources = rdResource.getChildren();
-		List<String> query = exchange.getRequestOptions().getURIQueries();
+		List<String> query = exchange.getRequestOptions().getUriQuery();
 		String result = "";
 		String domainQuery = "";
 		String endpointQuery = "";

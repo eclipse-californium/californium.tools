@@ -220,6 +220,7 @@ public class GUIClient extends JPanel {
 				while(scanner.hasNext()) {
 					String part = scanner.next();
 					String res = part.split(">")[0];
+					System.out.println(res);
 					ress1.add(COAP_PROTOCOL+getHost()+res);
 					ress2.add(res);
 				}

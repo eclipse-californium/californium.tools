@@ -46,7 +46,7 @@ public class RDLookUpResResource extends CoapResource {
 		String endpointQuery = "";
 		List<String> toRemove = new ArrayList<String>(); 
 		
-		List<String> query = exchange.getRequestOptions().getURIQueries();
+		List<String> query = exchange.getRequestOptions().getUriQuery();
 		
 		for (String q : query) {
 			LinkAttribute attr = LinkAttribute.parse(q);

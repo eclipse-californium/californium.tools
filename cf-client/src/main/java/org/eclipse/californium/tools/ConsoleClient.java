@@ -23,6 +23,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.util.logging.Level;
 
@@ -35,10 +36,11 @@ import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.network.CoAPEndpoint;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
-import org.eclipse.californium.core.network.EndpointManager.ClientMessageDeliverer;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.ScandiumLogger;
+import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
+import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
 
 /**
  * This class implements a simple CoAP client for testing purposes. Usage:
@@ -72,6 +74,9 @@ public class ConsoleClient {
 	// the trust store file used for DTLS server authentication
     private static final String TRUST_STORE_LOCATION = "certs/trustStore.jks";
 	private static final String TRUST_STORE_PASSWORD = "rootPass";
+
+	private static final String KEY_STORE_LOCATION = "certs/keyStore.jks";
+	private static final String KEY_STORE_PASSWORD = "endPass";
 	
 	// resource URI path used for discovery
 	private static final String DISCOVERY_RESOURCE = "/.well-known/core";
@@ -96,6 +101,9 @@ public class ConsoleClient {
 	static String payload = "";
 	static boolean loop = false;
 
+	static boolean usePSK = false;
+	static boolean useRaw = true;
+
 	// for coaps
 	private static Endpoint dtlsEndpoint;
 	
@@ -116,6 +124,10 @@ public class ConsoleClient {
 			if (arg.startsWith("-")) {
 				if (arg.equals("-l")) {
 					loop = true;
+				} else if (arg.equals("-psk")) {
+					usePSK = true;
+				} else if (arg.equals("-cert")) {
+					useRaw = false;
 				} else {
 					System.out.println("Unrecognized option: " + arg);
 				}
@@ -172,6 +184,11 @@ public class ConsoleClient {
 		request.getOptions().setContentFormat(MediaTypeRegistry.TEXT_PLAIN);
 		
 		if (request.getScheme().equals(CoAP.COAP_SECURE_URI_SCHEME)) {
+			
+	        // Pre-shared secrets
+	        InMemoryPskStore pskStore = new InMemoryPskStore();
+	        pskStore.addKnownPeer(new InetSocketAddress(request.getDestination(), request.getDestinationPort()),
+	        		"password", "sesame".getBytes()); // from ETSI Plugtest test spec
 		    
 		    // load trust store
             KeyStore trustStore = KeyStore.getInstance("JKS");
@@ -181,8 +198,17 @@ public class ConsoleClient {
             // You can load multiple certificates if needed
             Certificate[] trustedCertificates = new Certificate[1];
             trustedCertificates[0] = trustStore.getCertificate("root");
-			dtlsEndpoint = new CoAPEndpoint(new DTLSConnector(new InetSocketAddress(0), trustedCertificates), NetworkConfig.getStandard());
-			dtlsEndpoint.setMessageDeliverer(new ClientMessageDeliverer());
+            
+            DTLSConnector dtlsconnector = new DTLSConnector(new InetSocketAddress(0), trustedCertificates);
+            
+            KeyStore keyStore = KeyStore.getInstance("JKS");
+	        InputStream in = new FileInputStream(KEY_STORE_LOCATION);
+	        keyStore.load(in, KEY_STORE_PASSWORD.toCharArray());
+	        dtlsconnector.getConfig().setPrivateKey((PrivateKey)keyStore.getKey("client", KEY_STORE_PASSWORD.toCharArray()), keyStore.getCertificateChain("client"), useRaw);
+	        dtlsconnector.getConfig().setPskStore(pskStore);
+	        if (usePSK) dtlsconnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_PSK_WITH_AES_128_CCM_8);
+	        
+			dtlsEndpoint = new CoAPEndpoint(dtlsconnector, NetworkConfig.getStandard());
 			dtlsEndpoint.start();
 			EndpointManager.getEndpointManager().setDefaultSecureEndpoint(dtlsEndpoint);
 		}
@@ -211,7 +237,7 @@ public class ConsoleClient {
 					System.out.println("Time elapsed (ms): " + response.getRTT());
 	
 					// check of response contains resources
-					if (response.getOptions().hasContentFormat(MediaTypeRegistry.APPLICATION_LINK_FORMAT)) {
+					if (response.getOptions().isContentFormat(MediaTypeRegistry.APPLICATION_LINK_FORMAT)) {
 	
 						String linkFormat = response.getPayloadString();
 	
@@ -220,7 +246,6 @@ public class ConsoleClient {
 						System.out.println(linkFormat);
 	
 					} else {
-	
 						// check if link format was expected by client
 						if (method.equals("DISCOVER")) {
 							System.out.println("Server error: Link format not specified");
@@ -228,17 +253,12 @@ public class ConsoleClient {
 					}
 	
 				} else {
-	
 					// no response received	
 					System.err.println("Request timed out");
 					break;
 				}
 	
 			} while (loop);
-		
-		if (dtlsEndpoint!=null) {
-			dtlsEndpoint.stop();
-		}
 			
 		} catch (Exception e) {
 			System.err.println("Failed to execute request: " + e.getMessage());

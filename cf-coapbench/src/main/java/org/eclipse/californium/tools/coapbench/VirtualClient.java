@@ -165,9 +165,10 @@ public class VirtualClient implements Runnable {
 	}
 	
 	private void checkCode(byte[] bytes) {
-		byte c = bytes[1];
+		int c = 0xFF & bytes[1];
 		if (checkCode && c != CoAP.ResponseCode.CONTENT.value) {
-			System.err.println("Did not receive Content as response code but "+c);
+			System.err.println("Wrong response code: " + CoAP.ResponseCode.valueOf(c));
+			System.exit(-1);
 		}
 	}
 

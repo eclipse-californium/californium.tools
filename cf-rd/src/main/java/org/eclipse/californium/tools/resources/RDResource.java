@@ -53,7 +53,7 @@ public class RDResource extends CoapResource {
 		
 		ResponseCode responseCode;
 		
-		List<String> query = exchange.getRequestOptions().getURIQueries();
+		List<String> query = exchange.getRequestOptions().getUriQuery();
 		for (String q:query) {
 			// FIXME Do not use Link attributes for URI template variables
 			attr = LinkAttribute.parse(q);

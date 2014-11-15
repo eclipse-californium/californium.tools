@@ -81,7 +81,7 @@ public class RDNodeResource extends CoapResource {
 		/*
 		 * get lifetime from option query - only for PUT request.
 		 */
-		List<String> query = request.getOptions().getURIQueries();
+		List<String> query = request.getOptions().getUriQuery();
 		for (String q : query) {
 			// FIXME Do not use Link attributes for URI template variables
 			attr = LinkAttribute.parse(q);
