@@ -184,29 +184,30 @@ public class ConsoleClient {
 		request.getOptions().setContentFormat(MediaTypeRegistry.TEXT_PLAIN);
 		
 		if (request.getScheme().equals(CoAP.COAP_SECURE_URI_SCHEME)) {
-			
-	        // Pre-shared secrets
-	        InMemoryPskStore pskStore = new InMemoryPskStore();
-	        pskStore.addKnownPeer(new InetSocketAddress(request.getDestination(), request.getDestinationPort()),
-	        		"password", "sesame".getBytes()); // from ETSI Plugtest test spec
 		    
 		    // load trust store
             KeyStore trustStore = KeyStore.getInstance("JKS");
             InputStream inTrust = new FileInputStream(TRUST_STORE_LOCATION);
             trustStore.load(inTrust, TRUST_STORE_PASSWORD.toCharArray());
-            
-            // You can load multiple certificates if needed
+            // load multiple certificates if needed
             Certificate[] trustedCertificates = new Certificate[1];
             trustedCertificates[0] = trustStore.getCertificate("root");
             
             DTLSConnector dtlsconnector = new DTLSConnector(new InetSocketAddress(0), trustedCertificates);
-            
-            KeyStore keyStore = KeyStore.getInstance("JKS");
-	        InputStream in = new FileInputStream(KEY_STORE_LOCATION);
-	        keyStore.load(in, KEY_STORE_PASSWORD.toCharArray());
-	        dtlsconnector.getConfig().setPrivateKey((PrivateKey)keyStore.getKey("client", KEY_STORE_PASSWORD.toCharArray()), keyStore.getCertificateChain("client"), useRaw);
-	        dtlsconnector.getConfig().setPskStore(pskStore);
-	        if (usePSK) dtlsconnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_PSK_WITH_AES_128_CCM_8);
+	        
+	        if (usePSK) {
+	        	InMemoryPskStore pskStore = new InMemoryPskStore();
+		        pskStore.addKnownPeer(new InetSocketAddress(request.getDestination(), request.getDestinationPort()),
+		        		System.console().readLine("PSK Identity: "),
+		        		new String(System.console().readPassword("Secret Key (input hidden): ")).getBytes());
+	        	dtlsconnector.getConfig().setPskStore(pskStore);
+	        	dtlsconnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_PSK_WITH_AES_128_CCM_8);
+	        } else {
+	        	KeyStore keyStore = KeyStore.getInstance("JKS");
+		        InputStream in = new FileInputStream(KEY_STORE_LOCATION);
+		        keyStore.load(in, KEY_STORE_PASSWORD.toCharArray());
+		        dtlsconnector.getConfig().setPrivateKey((PrivateKey)keyStore.getKey("client", KEY_STORE_PASSWORD.toCharArray()), keyStore.getCertificateChain("client"), useRaw);
+	        }
 	        
 			dtlsEndpoint = new CoAPEndpoint(dtlsconnector, NetworkConfig.getStandard());
 			dtlsEndpoint.start();
@@ -276,10 +277,13 @@ public class ConsoleClient {
 		System.out.println("Usage: " + ConsoleClient.class.getSimpleName() + " [-l] METHOD URI [PAYLOAD]");
 		System.out.println("  METHOD  : {GET, POST, PUT, DELETE, DISCOVER, OBSERVE}");
 		System.out.println("  URI     : The CoAP URI of the remote endpoint or resource");
+		System.out.println("            A coaps URI will automatically use CoAP over DTLS");
 		System.out.println("  PAYLOAD : The data to send with the request");
 		System.out.println("Options:");
 		System.out.println("  -l      : Loop for multiple responses");
 		System.out.println("           (automatic for OBSERVE and separate responses)");
+		System.out.println("  -psk    : Use a pre-shared secrest for DTLS (is prompted)");
+		System.out.println("  -cert   : Use full X.509 certificates instead of raw public keys");
 		System.out.println();
 		System.out.println("Examples:");
 		System.out.println("  " + ConsoleClient.class.getSimpleName() + " DISCOVER coap://localhost");
