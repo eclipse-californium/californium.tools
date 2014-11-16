@@ -40,7 +40,6 @@ public class VirtualClientManager {
 
 	private long timestamp;
 	private int count;
-	private int time;
 	private ArrayList<VirtualClient> clients;
 	
 	private LogFile log;
@@ -115,7 +114,6 @@ public class VirtualClientManager {
 	
 	public void start(int count, int time) throws Exception {
 		ensurelog();
-		this.time = time;
 		setClientCount(count);
 		Thread[] threads = new Thread[count];
 		for (int i=0;i<count;i++) {
