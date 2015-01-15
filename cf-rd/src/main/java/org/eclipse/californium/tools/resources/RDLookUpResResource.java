@@ -70,13 +70,12 @@ public class RDLookUpResResource extends CoapResource {
 		
 		
 		Iterator<Resource>  resIt = resources.iterator();
-		System.out.println(endpointQuery);
 				
 		query.removeAll(toRemove);
 		
-		while (resIt.hasNext()){
+		while (resIt.hasNext()) {
 			Resource res = resIt.next();
-			if (res.getClass() == RDNodeResource.class){
+			if (res instanceof RDNodeResource) {
 				RDNodeResource node = (RDNodeResource) res;
 				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain())) && 
 					 (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointIdentifier())) ) {
@@ -85,12 +84,12 @@ public class RDLookUpResResource extends CoapResource {
 				}
 			}
 		}
-		if(result.isEmpty()){
-			exchange.respond(ResponseCode.NOT_FOUND);
-		}
-		else{
-			exchange.respond(ResponseCode.CONTENT, result.substring(0,result.length()-1),MediaTypeRegistry.APPLICATION_LINK_FORMAT);
-		}
 		
+		if (result.isEmpty()) {
+			exchange.respond(ResponseCode.NOT_FOUND);
+		} else {
+			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length() - 1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
+		}
+
 	}
 }

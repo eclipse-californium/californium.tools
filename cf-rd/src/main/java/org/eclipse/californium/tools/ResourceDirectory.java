@@ -15,8 +15,6 @@
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
-import java.net.SocketException;
-
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.tools.resources.RDLookUpTopResource;
 import org.eclipse.californium.tools.resources.RDResource;
@@ -34,22 +32,13 @@ public class ResourceDirectory extends CoapServer {
     public static void main(String[] args) {
         
         // create server
-        try {
-            
-            CoapServer server = new ResourceDirectory();
-            server.start();
-            
-            System.out.printf(ResourceDirectory.class.getSimpleName()+" listening on port %d.\n", server.getEndpoints().get(0).getAddress().getPort());
-            
-        } catch (SocketException e) {
-            
-            System.err.printf("Failed to create "+ResourceDirectory.class.getSimpleName()+": %s\n", e.getMessage());
-            System.exit(ERR_INIT_FAILED);
-        }
+        CoapServer server = new ResourceDirectory();
+        server.start();
         
+        System.out.printf(ResourceDirectory.class.getSimpleName()+" listening on port %d.\n", server.getEndpoints().get(0).getAddress().getPort());
     }
     
-    public ResourceDirectory() throws SocketException {
+    public ResourceDirectory() {
         
     	RDResource rdResource = new RDResource(); 
 

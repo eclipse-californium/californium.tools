@@ -31,6 +31,7 @@ public class RDTagResource extends CoapResource {
 		tagsMap = new HashMap<String,String>();
 		parentNode = parent;
 		
+		setVisible(false);
 	}
 	
 	public boolean containsTag(String tag, String value){
@@ -49,16 +50,9 @@ public class RDTagResource extends CoapResource {
 		return true;
 	}
 	
-//	public HashSet<String> getTags(){
-//		return tagsSet;
-//	}
-	
 	public HashMap<String, String> getTags(){
 		return tagsMap;
 	}
-	
-	
-	
 	
 	public void addTag(String tag, String value){
 		tagsMap.put(tag.toLowerCase(), value.toLowerCase());

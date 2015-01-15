@@ -20,7 +20,6 @@ import java.util.List;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
-import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
 
@@ -29,7 +28,6 @@ public class RDResource extends CoapResource {
 
 	public RDResource() {
 		this("rd");
-		getAttributes().addResourceType("core.rd");
 	}
 
 	public RDResource(String resourceIdentifier) {
@@ -44,14 +42,15 @@ public class RDResource extends CoapResource {
 	@Override
 	public void handlePOST(CoapExchange exchange) {
 		
-
 		// get name and lifetime from option query
 		LinkAttribute attr;
 		String endpointIdentifier = "";
-		String domain = NetworkConfig.getStandard().getString("RD_DEFAULT_DOMAIN");
+		String domain = "local";
 		RDNodeResource resource = null;
 		
 		ResponseCode responseCode;
+
+		LOGGER.info("Registration request: "+exchange.getSourceAddress());
 		
 		List<String> query = exchange.getRequestOptions().getUriQuery();
 		for (String q:query) {
@@ -69,6 +68,7 @@ public class RDResource extends CoapResource {
 
 		if (endpointIdentifier.equals("")) {
 			exchange.respond(ResponseCode.BAD_REQUEST, "Missing endpoint (?ep)");
+			LOGGER.info("Missing endpoint: "+exchange.getSourceAddress());
 			return;
 		}
 		
@@ -85,7 +85,7 @@ public class RDResource extends CoapResource {
 				randomName = Integer.toString((int) (Math.random() * 10000));
 			} while (getChild(randomName) != null);
 			
-			resource = new RDNodeResource(randomName, endpointIdentifier, domain);
+			resource = new RDNodeResource(endpointIdentifier, domain);
 			add(resource);
 			
 			responseCode = ResponseCode.CREATED;
@@ -99,6 +99,8 @@ public class RDResource extends CoapResource {
 			exchange.respond(ResponseCode.BAD_REQUEST);
 			return;
 		}
+		
+		LOGGER.info("Adding new endpoint: "+resource.getContext());
 
 		// inform client about the location of the new resource
 		exchange.setLocationPath(resource.getURI());

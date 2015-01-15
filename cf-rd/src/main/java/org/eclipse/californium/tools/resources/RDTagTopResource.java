@@ -156,8 +156,7 @@ public class RDTagTopResource extends CoapResource {
 				return;
 			}
 		}
-		System.out.println(ep);
-		System.out.println(resourcePath);
+		
 		if ((!payloadMap.containsKey("add") && !payloadMap.containsKey("delete")) || ep.isEmpty()) {
 			exchange.respond(ResponseCode.BAD_REQUEST);
 			return;
