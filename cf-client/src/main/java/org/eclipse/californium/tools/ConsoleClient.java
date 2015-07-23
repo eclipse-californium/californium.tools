@@ -196,8 +196,8 @@ public class ConsoleClient {
             
             DtlsConnectorConfig.Builder builder = new DtlsConnectorConfig.Builder(new InetSocketAddress(0));
             builder.setTrustStore(trustedCertificates);
-	        
-	        if (usePSK) {
+            
+            if (usePSK) {
 	        	InMemoryPskStore pskStore = new InMemoryPskStore();
 		        pskStore.addKnownPeer(new InetSocketAddress(request.getDestination(), request.getDestinationPort()),
 		        		System.console().readLine("PSK Identity: "),
