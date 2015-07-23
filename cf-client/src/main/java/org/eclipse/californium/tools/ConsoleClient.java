@@ -39,6 +39,7 @@ import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.ScandiumLogger;
+import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
 import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
 import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
 
@@ -193,23 +194,26 @@ public class ConsoleClient {
             Certificate[] trustedCertificates = new Certificate[1];
             trustedCertificates[0] = trustStore.getCertificate("root");
             
-            DTLSConnector dtlsconnector = new DTLSConnector(new InetSocketAddress(0), trustedCertificates);
-	        
-	        if (usePSK) {
+            DtlsConnectorConfig.Builder builder = new DtlsConnectorConfig.Builder(new InetSocketAddress(0));
+            builder.setTrustStore(trustedCertificates);
+            
+            if (usePSK) {
 	        	InMemoryPskStore pskStore = new InMemoryPskStore();
 		        pskStore.addKnownPeer(new InetSocketAddress(request.getDestination(), request.getDestinationPort()),
 		        		System.console().readLine("PSK Identity: "),
 		        		new String(System.console().readPassword("Secret Key (input hidden): ")).getBytes());
-	        	dtlsconnector.getConfig().setPskStore(pskStore);
-	        	dtlsconnector.getConfig().setPreferredCipherSuite(CipherSuite.TLS_PSK_WITH_AES_128_CCM_8);
+		        builder.setPskStore(pskStore);
+		        builder.setSupportedCipherSuites(new CipherSuite[] {CipherSuite.TLS_PSK_WITH_AES_128_CCM_8});
 	        } else {
 	        	KeyStore keyStore = KeyStore.getInstance("JKS");
 		        InputStream in = new FileInputStream(KEY_STORE_LOCATION);
 		        keyStore.load(in, KEY_STORE_PASSWORD.toCharArray());
-		        dtlsconnector.getConfig().setPrivateKey((PrivateKey)keyStore.getKey("client", KEY_STORE_PASSWORD.toCharArray()), keyStore.getCertificateChain("client"), useRaw);
+		        builder.setIdentity((PrivateKey)keyStore.getKey("client", KEY_STORE_PASSWORD.toCharArray()), keyStore.getCertificateChain("client"), useRaw);
 	        }
 	        
-			dtlsEndpoint = new CoAPEndpoint(dtlsconnector, NetworkConfig.getStandard());
+	        DTLSConnector dtlsconnector = new DTLSConnector(builder.build(), null);
+	        
+	        dtlsEndpoint = new CoAPEndpoint(dtlsconnector, NetworkConfig.getStandard());
 			dtlsEndpoint.start();
 			EndpointManager.getEndpointManager().setDefaultSecureEndpoint(dtlsEndpoint);
 		}
