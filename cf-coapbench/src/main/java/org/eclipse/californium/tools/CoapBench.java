@@ -20,7 +20,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
-import org.eclipse.californium.tools.coapbench.VirtualClientManager;
+import org.eclipse.californium.tools.coapbench.VirtualDeviceManager;
 
 
 public class CoapBench {
@@ -33,6 +33,7 @@ public class CoapBench {
 
 	// Defaults
 	public static final int DEFAULT_CLIENTS = 1;
+	public static final int DEFAULT_SERVERS = 1;
 	public static final int DEFAULT_TIME = 30; // [s]
 
 	public static final String DEFAULT_MASTER_ADDRESS = "localhost";
@@ -107,7 +108,7 @@ public class CoapBench {
 		}
 		
 		int[] series = convertSeries(clients);
-		VirtualClientManager manager = new VirtualClientManager(uri, bindSAddr);
+		VirtualDeviceManager manager = new VirtualDeviceManager(uri, bindSAddr);
 		if (withLatency) manager.setEnableLatency(true);
 		manager.runConcurrencySeries(series, time*1000);
 		
@@ -137,6 +138,7 @@ public class CoapBench {
 		int port = DEFAULT_MASTER_PORT;
 		int index = 1;
 		boolean verbose = false;
+		//String requestType;
 		while (index < args.length) {
 			String arg = args[index];
 			if ("-a".equals(arg)) {
@@ -145,6 +147,8 @@ public class CoapBench {
 				port = Integer.parseInt(args[index+1]);
 			} else if ("-v".equals(arg)) {
 				verbose = true;
+			//} else if ("-m".equals(arg)) {
+			//	requestType = args[index+1];
 			}
 			index += 2;
 		}
@@ -215,6 +219,8 @@ public class CoapBench {
 				+ "\n            The address of the master."
 				+ "\n    -p PORT"
 				+ "\n            The port of the master."
+				+ "\n	 -s"
+				+ "\n			 Specifies whether the resource should be observed (applies if the request type is set to GET)."
 				+ "\n"
 				+ "\nExamples:"
 				+ "\nStart 50 clients that concurrently send GET requests for 60 seconds"

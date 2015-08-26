@@ -24,6 +24,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.tools.coapbench.producer.VeryEcoMessageProducer;
@@ -31,7 +32,7 @@ import org.eclipse.californium.tools.coapbench.producer.VeryEcoMessageProducer;
 /**
  * A virtual client sends request to the server as fast as it can handle them.
  */
-public class VirtualClient implements Runnable {
+public class VirtualClient implements Runnable, VirtualDevice {
 
 	public static final int TIMEOUT = 10000;
 	
@@ -49,7 +50,7 @@ public class VirtualClient implements Runnable {
 	private byte[] mid;
 	private long timestamp;
 	
-	private IntArray latencies;
+	private ArrayList<Integer> latencies;
 	
 	private boolean checkMID = true;
 	private boolean checkCode = true;
@@ -61,7 +62,7 @@ public class VirtualClient implements Runnable {
 	
 	public VirtualClient(URI uri, InetSocketAddress addr) throws Exception {
 		this.mid = new byte[2];
-		this.latencies = new IntArray();
+		this.latencies = new ArrayList<Integer>();
 		this.producer = new VeryEcoMessageProducer();
 		this.pSend = new DatagramPacket(new byte[0], 0);
 		this.pRecv = new DatagramPacket(new byte[100], 100);
@@ -80,7 +81,9 @@ public class VirtualClient implements Runnable {
 	
 	public void setURI(URI uri)  throws UnknownHostException {
 		destAddress = InetAddress.getByName(uri.getHost());
-		destPort = uri.getPort();
+		if (uri.getPort() == -1)
+			destPort = 5683;
+		else destPort = uri.getPort();
 		producer.setURI(uri);
 	}
 	
@@ -126,6 +129,11 @@ public class VirtualClient implements Runnable {
 		}
 	}
 	
+	@Override
+	public boolean isRunning() {
+		return runnable;
+	}
+	
 	public void stop() {
 		runnable = false;
 	}
@@ -144,7 +152,7 @@ public class VirtualClient implements Runnable {
 		return lost;
 	}
 	
-	public IntArray getLatencies() {
+	public ArrayList<Integer> getLatencies() {
 		return latencies;
 	}
 	
