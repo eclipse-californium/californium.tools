@@ -23,12 +23,12 @@ import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.tools.coapbench.Command;
-
 
 /**
  * The master keeps a TCP connection to all client slaves. The master sends
@@ -41,6 +41,10 @@ public class ClientMaster implements Runnable {
 	public static final String CMD_PING = "ping";
 	public static final String CMD_STRESS = "stress";
 	public static final String CMD_BENCH = "bench";
+	public static final String CMD_OBSERVE_BENCH = "observe";
+	public static final String CMD_OBSERVE_START = "observe_start";
+	public static final String CMD_OBSERVE_READY = "observe_ready";
+	public static final String CMD_OBSERVE_FAIL = "observe_fail";
 	public static final String CMD_WAIT = "wait";
 	public static final String CMD_BEEP = "beep";
 	public static final String CMD_APACHE_BENCH = "ab";
@@ -59,6 +63,9 @@ public class ClientMaster implements Runnable {
 	}
 	
 	public void start() {
+		int successful = 0;
+		int totalobserves = 0;
+		
 		System.out.println("Start client master");
 		System.out.println("Type command, e.g., \"help\":");
 		new Thread(this).start();
@@ -66,11 +73,17 @@ public class ClientMaster implements Runnable {
 		try {
 			while (true) {
 				try {
+					successful = 0;
+					totalobserves = 0;
 					String line = in.nextLine();
 					if (line.equals("-"))
 						line = last;
 					else last = line;
 					String[] commands = line.split(";");
+					for (String cmd:commands) {
+						if (new Command(cmd.trim()).getBody().startsWith(CMD_OBSERVE_BENCH))
+							totalobserves++;
+					}
 					for (String cmd:commands) {
 						Command command = new Command(cmd.trim());
 						String body = command.getBody();
@@ -86,6 +99,15 @@ public class ClientMaster implements Runnable {
 							command(command);
 						} else if (body.startsWith(CMD_BENCH)) {
 							command(command);
+						} else if (body.startsWith(CMD_OBSERVE_BENCH)) {
+							if (observe(command))
+								++successful;
+							else {
+								observe_fail();
+								break;
+							}
+							if (successful == totalobserves)
+								observe_start();
 						} else if (body.startsWith(CMD_APACHE_BENCH)) {
 							command(command);
 						} else if (body.startsWith(CMD_WAIT)) {
@@ -130,6 +152,46 @@ public class ClientMaster implements Runnable {
 		}
 	}
 	
+	private boolean observe(Command command) {
+		ArrayList<Slave> subslaves = getSlaves(command.getAt());
+		int timeout = 10000;
+		for (Slave slave:subslaves) {
+			System.out.println("Observe cmd \"" + command.getBody() + "\" sent to " + slave);
+
+			if (command.has("-log")) {
+				slave.send(command.getBody());
+				continue;
+			}
+			if (command.has("-s"))
+				timeout = ((250 + command.getInt("-s")) * 40 > 1000 ? (250 + command.getInt("-s")) * 40 : 1000);
+			if (!slave.observe_init(command, timeout)) {
+				if (slave.ping() < 0) {
+					System.err.println("Slave #" + slave.id + " is unreachable.");
+					try {
+						slave.socket.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					remove(slave);
+				}
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	private void observe_start() {
+		System.out.println("All slaves reported ready for observe benchmarking.");
+		for (Slave s:getSlaves(Command.ALL))
+			s.send(CMD_OBSERVE_START);
+	}
+	
+	private void observe_fail() {
+		System.out.println("Observe benchmark fails: " + ((slaves.size() < 0) ? "there are no registered slaves left." : "not all slaves have initialized the test successfully.")); 
+		for (Slave s:getSlaves(Command.ALL))
+			s.send(CMD_OBSERVE_FAIL);
+	}
+	
 	private void post(Command command) throws InterruptedException {
 		List<String> parameters = command.getParameters();
 		if (parameters.size() > 0) {
@@ -171,7 +233,7 @@ public class ClientMaster implements Runnable {
 			try {
 				Socket connection = masterSocket.accept();
 				System.out.println("Connected to new slave "+connection);
-				Slave slave = new Slave(connection);
+				Slave slave = new Slave(connection, slaves.size() + 1);
 				slaves.add(slave);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -196,24 +258,26 @@ public class ClientMaster implements Runnable {
 	
 	private class Slave {
 		
+		private int id;
 		private Socket socket;
 		private Scanner in;
 		
-		public Slave(Socket socket) throws Exception {
+		public Slave(Socket socket, int id) throws Exception {
 			this.socket = socket;
+			this.socket.setSoTimeout(0);
 			this.in = new Scanner(socket.getInputStream());
+			this.id = id;
 		}
 		
-		public boolean send(String command) {
+		public boolean send(String command) { // TODO: find a way to keep a socket up when it times out
 			try {
-				socket.getOutputStream().write(command.getBytes());
-				socket.getOutputStream().write("\n".getBytes());
+				socket.getOutputStream().write(new String(command + "\n").getBytes());
 				socket.getOutputStream().flush();
 				return true;
 				
 			} catch (SocketException e) {
 				// When slave is shutdown, we arrive here
-				System.out.println("Exception while sending to "+this+": \""+e.getMessage()+"\"");
+				System.out.println("Exception while sending \"" + command + "\" to "+this+": \""+e.getMessage()+"\"");
 				remove(this);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -224,16 +288,36 @@ public class ClientMaster implements Runnable {
 		
 		public int ping() {
 			try {
+				socket.setSoTimeout(2000);
 				long t0 = System.nanoTime();
 				boolean succ = send(CMD_PING);
 				if (!succ) return -1;
 				in.nextLine(); // wait for response
 				long dt = System.nanoTime() - t0;
 				return (int) (dt / 1000000);
+			} catch (NoSuchElementException nsee) {
+				return -1;
 			} catch (Exception e) {
 				e.printStackTrace();
 				return -1;
 			}
+		}
+		
+		public boolean observe_init(Command cmd, int timeout) {
+			send(cmd.getBody());
+			String response = new String();
+			try {
+				socket.setSoTimeout(timeout);
+				response = in.nextLine();
+				if (!response.equals(CMD_OBSERVE_READY))
+					throw new NoSuchElementException();
+				return true;
+			} catch (NoSuchElementException nsee) { // timeout/fail
+				System.err.println("Slave #" + id + " did not manage to initialize servers (" + response + ")");
+			} catch (SocketException e) {
+				e.printStackTrace();
+			}
+			return false;
 		}
 		
 		@Override
@@ -252,6 +336,9 @@ public class ClientMaster implements Runnable {
 			+ "\n"
 			+ "\nInsert a log entry into log file (no spaces allowed)"
 			+ "\n    bench -log Test_No_77"
+			+ "\n"
+			+ "\nSend a signal to all clients each starting n servers for m seconds for an observe benchmark with the command"
+			+ "\n    observe -s n -t m coap://localhost:5683/announce"
 			+ "\n"
 			+ "\nOther commands: "
 			+ "\n    status       Print the current status"
