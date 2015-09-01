@@ -144,7 +144,9 @@ public class VirtualClientManager {
 			VirtualClient client = clients.get(i);
 			int count = client.getCount();
 			int lost = client.getTimeouts();
-			latencies.add(client.getLatencies());
+			for (int lat : client.getLatencies()) {
+				latencies.add(lat);
+			}
 			sum += count;
 			sumTimeout += lost;
 			if (verbose)
