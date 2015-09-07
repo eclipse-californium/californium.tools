@@ -4,71 +4,23 @@
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
 	<modelVersion>4.0.0</modelVersion>
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<project.build.javaVersion>1.7</project.build.javaVersion>
-		<maven.source.pluginVersion>2.4</maven.source.pluginVersion>
-		<maven.javadoc.pluginVersion>2.10.3</maven.javadoc.pluginVersion>
-	</properties>
 
-	<groupId>org.eclipse.californium</groupId>
+	<parent>
+		<groupId>org.eclipse.californium</groupId>
+		<artifactId>parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+	</parent>
+	
 	<artifactId>tools</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Californium (Cf) Tools</name>
 	<description>CoAP tools</description>
-	<url>https://www.eclipse.org/californium/</url>
-	<organization>
-		<name>Eclipse Foundation</name>
-		<url>http://www.eclipse.org/</url>
-	</organization>
-	<licenses>
-		<license>
-			<name>Eclipse Public License - Version 1.0</name>
-			<url>http://www.eclipse.org/org/documents/epl-v10.php</url>
-		</license>
-		<license>
-			<name>Eclipse Distribution License - Version 1.0</name>
-			<url>http://www.eclipse.org/org/documents/edl-v10.php</url>
-		</license>
-	</licenses>
 	<scm>
 		<developerConnection>scm:git:ssh://git@github.com/eclipse/californium.tools.git</developerConnection>
 		<url>https://github.com/eclipse/californium.tools</url>
 		<tag>HEAD</tag>
 	</scm>
-	<developers>
-		<developer>
-			<id>mkovatsch</id>
-			<name>Matthias Kovatsch</name>
-			<email>kovatsch@inf.ethz.ch</email>
-			<url>http://people.inf.ethz.ch/mkovatsc/</url>
-			<organization>ETH Zurich</organization>
-			<organizationUrl>http://www.vs.inf.ethz.ch/</organizationUrl>
-			<roles>
-				<role>Committer</role>
-				<role>Lead</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>mlanter</id>
-			<name>Martin Lanter</name>
-			<email>martin.lanter@gmx.ch</email>
-			<roles>
-				<role>Committer</role>
-			</roles>
-		</developer>
-		<developer>
-			<id>jvermillard</id>
-			<name>Julien Vermillard</name>
-			<email>jvermillar@sierrawireless.com</email>
-			<organization>Sierra Wireless</organization>
-			<roles>
-				<role>Committer</role>
-			</roles>
-		</developer>
-	</developers>
 
 	<modules>
 		<module>cf-client</module>
@@ -77,21 +29,112 @@
 		<module>cf-server</module>
 		<module>cf-rd</module>
 	</modules>
-	
-	<distributionManagement>
-		<repository>
-			<id>repo.eclipse.org</id>
-			<name>Californium Repository - Releases</name>
-			<url>https://repo.eclipse.org/content/repositories/californium-releases/</url>
-		</repository>
-		<snapshotRepository>
-			<id>repo.eclipse.org</id>
-			<name>Californium Repository - Snapshots</name>
-			<url>https://repo.eclipse.org/content/repositories/californium-snapshots/</url>
-		</snapshotRepository>
-	</distributionManagement>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>californium-core</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>${project.groupId}</groupId>
+				<artifactId>scandium</artifactId>
+				<version>${project.version}</version>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+				<groupId>${project.groupId}</groupId>
+			<artifactId>californium-core</artifactId>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-installed</id>
+						<phase>install</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>${project.groupId}</groupId>
+									<artifactId>${project.artifactId}</artifactId>
+									<version>${project.version}</version>
+									<type>${project.packaging}</type>
+								</artifactItem>
+							</artifactItems>
+							<outputDirectory>../run/</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 	<profiles>
+		<profile>
+			<!-- this profile generates javadoc to check integrity -->
+			<id>javadoc</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+				<property>
+					<name>createJavadoc</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<!-- this profile signs artifacts so that they can be deployed to repo.eclipse.org -->
+			<id>eclipse_jar_signing</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+				<property>
+					<name>enableEclipseJarSigner</name>
+				</property>
+			</activation>
+			<pluginRepositories>
+				<pluginRepository>
+					<id>eclipse-repo</id>
+					<name>Eclipse Repository</name>
+					<releases>
+						<enabled>true</enabled>
+					</releases>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+					<url>https://repo.eclipse.org/content/repositories/releases/</url>
+				</pluginRepository>
+			</pluginRepositories>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.eclipse.cbi.maven.plugins</groupId>
+						<artifactId>eclipse-jarsigner-plugin</artifactId>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 		<profile>
 			<!-- this profile generate all the needed artifact and signatures needed for releasing on maven central -->
 			<id>release</id>
@@ -109,114 +152,13 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>1.5</version>
-						<executions>
-							<execution>
-								<id>sign-artifacts</id>
-								<phase>verify</phase>
-								<goals>
-									<goal>sign</goal>
-								</goals>
-							</execution>
-						</executions>
 					</plugin>
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>2.9.1</version>
-						<executions>
-							<execution>
-								<id>attach-javadocs</id>
-								<goals>
-									<goal>jar</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-source-plugin</artifactId>
-						<version>2.2.1</version>
-						<executions>
-							<execution>
-								<id>attach-sources</id>
-								<goals>
-									<goal>jar-no-fork</goal>
-								</goals>
-							</execution>
-						</executions>
 					</plugin>
 				</plugins>
 			</build>
 		</profile>
 	</profiles>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.8.1</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.eclipse.californium</groupId>
-				<artifactId>californium-core</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.eclipse.californium</groupId>
-				<artifactId>scandium</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-	<dependencies>
-		<dependency>
-			<groupId>org.eclipse.californium</groupId>
-			<artifactId>californium-core</artifactId>
-		</dependency>
-	</dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
-				<configuration>
-					<source>${project.build.javaVersion}</source>
-					<target>${project.build.javaVersion}</target>
-					<encoding>${project.build.sourceEncoding}</encoding>
-				</configuration>
-			</plugin>
-
-			<!--  this create jar file of code from src/test/java so modules with tests can share code -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-jar-plugin</artifactId>
-				<version>2.4</version>
-				<executions>
-					<execution>
-						<goals>
-							<goal>test-jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
-				<executions>
-					<execution>
-						<id>attach-sources</id>
-						<goals>
-							<goal>jar</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 </project>
