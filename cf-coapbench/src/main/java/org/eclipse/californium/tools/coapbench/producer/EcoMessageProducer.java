@@ -33,9 +33,7 @@ import org.eclipse.californium.elements.RawData;
  * is rather economic because it creates all 65000 requests (with different
  * MIDs) once and only changes the port after all requests have been used once.
  * This producer is able to produce an infinit amount of requests but only needs
- * the memory for 65000 of them. However, setting the port needs some
- * computation and might cause worse cache-locality as with
- * {@link MessageProducer}.
+ * the memory for 65000 of them.
  */
 public class EcoMessageProducer implements Iterator<RawData> {
 
@@ -57,8 +55,6 @@ public class EcoMessageProducer implements Iterator<RawData> {
 	public EcoMessageProducer(String targetURI, int amount) {
 		this.amount = amount;
 		try {
-			
-//			address = InetAddress.getByName("192.168.1.33");
 
 			ports = new short[1 << 16];
 			ArrayList<Short> ps = new ArrayList<Short>(ports.length);
@@ -80,7 +76,6 @@ public class EcoMessageProducer implements Iterator<RawData> {
 				byte[] bytes = serializer.serialize(request).getBytes();
 				messages.add(bytes);
 			}
-//			Collections.shuffle(messages);
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);

@@ -55,7 +55,7 @@ public class VeryEcoNotificationProducer implements Iterator<byte[]> {
 		
 		response.setToken(token);
 		response.setMID(MID);
-		response.setOptions(response.getOptions().setObserve(1)); // Why is length 0 allowed?
+		response.setOptions(response.getOptions().setObserve(1));
 		
 		prototype = serializer.serialize(response).getBytes();
 	}
@@ -95,8 +95,6 @@ public class VeryEcoNotificationProducer implements Iterator<byte[]> {
 			prototype[optionIndex] = new Integer((prototype[optionIndex] & 0xF0) + 1).byteValue();
 			prototype = Arrays.copyOfRange(prototype, 0, optionIndex + 2);
 		}
-		//Third millennium called asking why we aren't done yet.
-		//System.err.println("[VENP] New prototype: [" + bytesToHex(prototype) + "]; option index was = " + optionIndex + "; option length was = " + optionLength + ".");
 		return prototype;
 	}
 	

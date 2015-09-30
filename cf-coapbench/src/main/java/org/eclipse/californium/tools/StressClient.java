@@ -32,7 +32,6 @@ import org.eclipse.californium.elements.RawData;
 public class StressClient {
 
 	public static final String HOST = null; //ClientSlave.MASTER_ADDRESS;
-//	public static final String HOST = "169.254.12.143";
 	public static final int PORT = 5683;
 	public static final String TARGET = "hello";
 	public static final int OCCUPATION = 20000;
