@@ -190,6 +190,7 @@ public class VirtualServer implements Runnable, VirtualDevice {
 			req.setPayload("coap://" + bindAddress.getHostString() + ":" + socket.getLocalPort() + "/benchmark");
 		else
 			req.setPayload("coap://127.0.0.1:" + socket.getLocalPort() + "/benchmark");
+		// set manually as no stack is used
 		req.setToken(new byte[0]);
 		req.setMID(0);
 		req.setType(Type.CON);
