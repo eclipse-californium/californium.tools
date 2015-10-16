@@ -96,7 +96,7 @@ public class RDNodeResource extends CoapResource {
 		try {
 			URI check;
 			if (newContext.equals("")) {
-				check = new URI("coap", "", request.getSource().getHostName(), request.getSourcePort(), "", "", ""); // required to set port
+				check = new URI("coap", "", request.getSource().getHostAddress(), request.getSourcePort(), "", "", ""); // required to set port
 				context = check.toString().replace("@", "").replace("?", "").replace("#", ""); // URI is a silly class
 			} else {
 				check = new URI(context);
