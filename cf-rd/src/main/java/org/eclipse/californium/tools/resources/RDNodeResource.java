@@ -30,6 +30,8 @@ import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
 
+import static org.eclipse.californium.core.coap.CoAP.*;
+
 
 public class RDNodeResource extends CoapResource {
 
@@ -57,7 +59,7 @@ public class RDNodeResource extends CoapResource {
 
 	/**
 	 * Updates the endpoint parameters from POST and PUT requests.
-	 * 
+	 *
 	 * @param request A POST or PUT request with a {?et,lt,con} URI Template query
 	 * 			and a Link Format payload.
 	 * 
@@ -65,19 +67,18 @@ public class RDNodeResource extends CoapResource {
 	public boolean setParameters(Request request) {
 
 		LinkAttribute attr;
-		
+
+		boolean lifeTimeUpdated = false;
 		int newLifeTime = 86400;
 		String newContext = "";
-		
-		/*
-		 * get lifetime from option query - only for PUT request.
-		 */
+
 		List<String> query = request.getOptions().getUriQuery();
 		for (String q : query) {
 			// FIXME Do not use Link attributes for URI template variables
 			attr = LinkAttribute.parse(q);
 			
 			if (attr.getName().equals(LinkFormat.LIFE_TIME)) {
+				lifeTimeUpdated = true;
 				newLifeTime = attr.getIntValue();
 				
 				if (newLifeTime < 60) {
@@ -90,8 +91,11 @@ public class RDNodeResource extends CoapResource {
 				newContext = attr.getValue();
 			}
 		}
-		
-		setLifeTime(newLifeTime);
+
+		// Set lifetime on PUT or if option is set
+		if (lifeTimeUpdated || (request.getCode() == Code.PUT)) {
+			setLifeTime(newLifeTime);
+		}
 		
 		try {
 			URI check;
