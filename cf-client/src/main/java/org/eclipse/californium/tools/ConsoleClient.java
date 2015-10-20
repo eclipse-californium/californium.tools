@@ -33,7 +33,7 @@ import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
-import org.eclipse.californium.core.network.CoAPEndpoint;
+import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.config.NetworkConfig;
@@ -213,7 +213,7 @@ public class ConsoleClient {
 
 			DTLSConnector dtlsconnector = new DTLSConnector(builder.build(), null);
 
-			dtlsEndpoint = new CoAPEndpoint(dtlsconnector, NetworkConfig.getStandard());
+			dtlsEndpoint = new CoapEndpoint(dtlsconnector, NetworkConfig.getStandard());
 			dtlsEndpoint.start();
 			EndpointManager.getEndpointManager().setDefaultSecureEndpoint(dtlsEndpoint);
 		}
