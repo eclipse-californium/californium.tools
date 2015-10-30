@@ -74,7 +74,7 @@ public class RDLookUpEPResource extends CoapResource {
 				
 					result += "<"+node.getContext()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointIdentifier()+"\"";
 					result += ";"+LinkFormat.DOMAIN+"=\""+node.getDomain()+"\"";
-					if(!node.getEndpointType().isEmpty()){
+					if(node.getEndpointType() != null && !node.getEndpointType().isEmpty()){ // fixed NullPointerException. was: if(!node.getEndpointType().isEmpty()){
 						result += ";"+LinkFormat.RESOURCE_TYPE+"=\""+node.getEndpointType()+"\"";
 					}
 							

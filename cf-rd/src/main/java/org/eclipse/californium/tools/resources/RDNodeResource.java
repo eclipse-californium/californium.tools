@@ -88,7 +88,12 @@ public class RDNodeResource extends CoapResource {
 			}
 			
 			if (attr.getName().equals(LinkFormat.CONTEXT)){
-				newContext = attr.getValue();
+				//newContext = attr.getValue();
+				// quick fix of above parsing error:
+				String[] conKeyValueParam = q.split("=");
+				if (conKeyValueParam.length > 0) {
+					newContext = q.split("=")[1];
+				}
 			}
 		}
 
@@ -103,7 +108,8 @@ public class RDNodeResource extends CoapResource {
 				check = new URI("coap", "", request.getSource().getHostAddress(), request.getSourcePort(), "", "", ""); // required to set port
 				context = check.toString().replace("@", "").replace("?", "").replace("#", ""); // URI is a silly class
 			} else {
-				check = new URI(context);
+				check = new URI(newContext); 
+				context = newContext;
 			}
 		} catch (Exception e) {
 			LOGGER.warning(e.toString());
