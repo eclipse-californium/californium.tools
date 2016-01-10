@@ -43,49 +43,53 @@ public class RDResource extends CoapResource {
 	public void handlePOST(CoapExchange exchange) {
 		
 		// get name and lifetime from option query
-		LinkAttribute attr;
-		String endpointIdentifier = "";
+		String endpointName = "";
 		String domain = "local";
 		RDNodeResource resource = null;
 		
 		ResponseCode responseCode;
 
-		LOGGER.info("Registration request: "+exchange.getSourceAddress());
+		LOGGER.info("Registration request from "+exchange.getSourceAddress().getHostName()+":"+exchange.getSourcePort());
 		
 		List<String> query = exchange.getRequestOptions().getUriQuery();
-		for (String q:query) {
-			// FIXME Do not use Link attributes for URI template variables
-			attr = LinkAttribute.parse(q);
+		for (String q : query) {
 			
-			if (attr.getName().equals(LinkFormat.END_POINT)) {
-				endpointIdentifier = attr.getValue();
+			KeyValuePair kvp = KeyValuePair.parse(q);
+			
+			if (LinkFormat.END_POINT.equals(kvp.getName()) && !kvp.isFlag()) {
+				endpointName = kvp.getValue();
 			}
-			
-			if (attr.getName().equals(LinkFormat.DOMAIN)) {
-				domain = attr.getValue();
+
+			if (LinkFormat.DOMAIN.equals(kvp.getName()) && !kvp.isFlag()) {
+				domain = kvp.getValue();
 			}
 		}
 
-		if (endpointIdentifier.equals("")) {
-			exchange.respond(ResponseCode.BAD_REQUEST, "Missing endpoint (?ep)");
-			LOGGER.info("Missing endpoint: "+exchange.getSourceAddress());
+		// mandatory variables
+		if (endpointName.isEmpty()) {
+			LOGGER.info("Missing Endpoint Name for "+exchange.getSourceAddress().getHostName()+":"+exchange.getSourcePort());
+			exchange.respond(ResponseCode.BAD_REQUEST, "Missing Endpoint Name (?ep)");
 			return;
 		}
 		
+		// find already registered EP
 		for (Resource node : getChildren()) {
-			if (((RDNodeResource) node).getEndpointIdentifier().equals(endpointIdentifier) && ((RDNodeResource) node).getDomain().equals(domain)) {
+			if (((RDNodeResource) node).getEndpointName().equals(endpointName) && ((RDNodeResource) node).getDomain().equals(domain)) {
 				resource = (RDNodeResource) node;
 			}
 		}
 		
 		if (resource==null) {
 			
+			// uncomment to use random resource names instead of registered Endpoint Name
+			/*
 			String randomName;
 			do {
 				randomName = Integer.toString((int) (Math.random() * 10000));
 			} while (getChild(randomName) != null);
+			*/
 			
-			resource = new RDNodeResource(endpointIdentifier, domain);
+			resource = new RDNodeResource(endpointName, domain);
 			add(resource);
 			
 			responseCode = ResponseCode.CREATED;
@@ -93,7 +97,7 @@ public class RDResource extends CoapResource {
 			responseCode = ResponseCode.CHANGED;
 		}
 		
-		// set parameters of resource
+		// set parameters of resource or abort on failure
 		if (!resource.setParameters(exchange.advanced().getRequest())) {
 			resource.delete();
 			exchange.respond(ResponseCode.BAD_REQUEST);

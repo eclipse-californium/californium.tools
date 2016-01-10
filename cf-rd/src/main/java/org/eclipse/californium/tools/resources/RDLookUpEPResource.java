@@ -42,52 +42,54 @@ public class RDLookUpEPResource extends CoapResource {
 	@Override
 	public void handleGET(CoapExchange exchange) {
 		Collection<Resource> resources = rdResource.getChildren();
-		List<String> query = exchange.getRequestOptions().getUriQuery();
 		String result = "";
 		String domainQuery = "";
 		String endpointQuery = "";
 		TreeSet<String> endpointTypeQuery = new TreeSet<String>();
-		
-		for (String q:query) {
-			LinkAttribute attr = LinkAttribute.parse(q);
-			if(attr.getName().equals(LinkFormat.DOMAIN)){
-				domainQuery = attr.getValue();
+
+		List<String> query = exchange.getRequestOptions().getUriQuery();
+		for (String q : query) {
+			KeyValuePair kvp = KeyValuePair.parse(q);
+			
+			if (LinkFormat.DOMAIN.equals(kvp.getName())) {
+				domainQuery = kvp.getValue();
 			}
-			if(attr.getName().equals(LinkFormat.END_POINT)){
-				endpointQuery = attr.getValue();
-				
+			
+			if (LinkFormat.END_POINT.equals(kvp.getName())) {
+				endpointQuery = kvp.getValue();
 			}
-			if(attr.getName().equals(LinkFormat.END_POINT_TYPE)){
-				Collections.addAll(endpointTypeQuery, attr.getValue().split(" "));
+			
+			if (LinkFormat.END_POINT_TYPE.equals(kvp.getName())) {
+				Collections.addAll(endpointTypeQuery, kvp.getValue().split(" "));
 			}
 		}
 		
 		Iterator<Resource>  resIt = resources.iterator();
 		
-		while (resIt.hasNext()){
+		while (resIt.hasNext()) {
 			Resource res = resIt.next();
-			if (res.getClass() == RDNodeResource.class){
+			if (res.getClass() == RDNodeResource.class) {
 				RDNodeResource node = (RDNodeResource) res;
-				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain())) && 
-					 (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointIdentifier())) &&
-					 (endpointTypeQuery.isEmpty() || endpointTypeQuery.contains(node.getEndpointType()))) {
+				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain()))
+				     && (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointName()))
+					 && (endpointTypeQuery.isEmpty() || endpointTypeQuery.contains(node.getEndpointType())) ) {
 				
-					result += "<"+node.getContext()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointIdentifier()+"\"";
+					result += "<"+node.getContext()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointName()+"\"";
 					result += ";"+LinkFormat.DOMAIN+"=\""+node.getDomain()+"\"";
 					if(!node.getEndpointType().isEmpty()){
 						result += ";"+LinkFormat.RESOURCE_TYPE+"=\""+node.getEndpointType()+"\"";
 					}
-							
+					
 					result += ",";
 				}
 			}
 		}
-		if(result.isEmpty()){
-			exchange.respond(ResponseCode.NOT_FOUND);
-		}
-		else{
-			exchange.respond(ResponseCode.CONTENT, result.substring(0,result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
-		}
 		
+		if (result.isEmpty()) {
+			exchange.respond(ResponseCode.NOT_FOUND);
+		} else {
+			// also remove trailing comma
+			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
+		}
 	}
 }

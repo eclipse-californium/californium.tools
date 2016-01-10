@@ -16,21 +16,21 @@
 package org.eclipse.californium.tools.resources;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import org.eclipse.californium.core.CoapResource;
+import org.eclipse.californium.core.WebLink;
+import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
-
-import static org.eclipse.californium.core.coap.CoAP.*;
 
 
 public class RDNodeResource extends CoapResource {
@@ -44,16 +44,21 @@ public class RDNodeResource extends CoapResource {
 	 */
 	private Timer lifetimeTimer;
 	
-	private int lifeTime;
+	private int lifeTime = 86400;
 	
-	private String endpointIdentifier;
+	private String endpointName;
 	private String domain;
-	private String endpointType;
 	private String context;
+	private String endpointType = "";
 	
-	public RDNodeResource(String endpointID, String domain) {
-		super(endpointID);		
-		this.endpointIdentifier = endpointID;
+	public RDNodeResource(String ep, String domain) {
+		super(ep);
+		
+		// check length restriction, but tolerantly accept
+		int epLength = ep.getBytes(CoAP.UTF8_CHARSET).length;
+		if (epLength>63) LOGGER.warning("Endpoint Name too long: "+ep+" uses "+epLength+" bytes");
+		
+		this.endpointName = ep;
 		this.domain = domain;
 	}
 
@@ -66,48 +71,54 @@ public class RDNodeResource extends CoapResource {
 	 */
 	public boolean setParameters(Request request) {
 
-		LinkAttribute attr;
-
-		boolean lifeTimeUpdated = false;
-		int newLifeTime = 86400;
+		boolean contextUpdated = false;
 		String newContext = "";
 
 		List<String> query = request.getOptions().getUriQuery();
 		for (String q : query) {
-			// FIXME Do not use Link attributes for URI template variables
-			attr = LinkAttribute.parse(q);
 			
-			if (attr.getName().equals(LinkFormat.LIFE_TIME)) {
-				lifeTimeUpdated = true;
-				newLifeTime = attr.getIntValue();
-				
-				if (newLifeTime < 60) {
-					LOGGER.info("Enforcing minimal RD lifetime of 60 seconds (was "+newLifeTime+")");
-					newLifeTime = 60;
+			KeyValuePair kvp = KeyValuePair.parse(q);
+			
+			if (LinkFormat.END_POINT_TYPE.equals(kvp.getName()) && !kvp.isFlag()) {
+				this.endpointType = kvp.getValue();
+			}
+			
+			if (LinkFormat.LIFE_TIME.equals(kvp.getName()) && !kvp.isFlag()) {
+				lifeTime = kvp.getIntValue();
+				if (lifeTime < 60) {
+					LOGGER.info("Enforcing minimal RD lifetime of 60 seconds (was "+lifeTime+")");
+					lifeTime = 60;
 				}
 			}
 			
-			if (attr.getName().equals(LinkFormat.CONTEXT)){
-				newContext = attr.getValue();
+			if (LinkFormat.CONTEXT.equals(kvp.getName()) && !kvp.isFlag()) {
+				newContext = kvp.getValue();
+				contextUpdated = true;
+			}
+		}
+		
+		// apply context from source address or con variable
+		if (context==null || contextUpdated) {
+			try {
+				URI check;
+				if (newContext.isEmpty()) {
+					// context from source address
+					check = new URI("coap", "", request.getSource().getHostAddress(), request.getSourcePort(), "", "", ""); // required to set port
+					this.context = check.toString().replace("@", "").replace("?", "").replace("#", ""); // URI is a silly class...
+				} else {
+					// context from URI template variable
+					check = new URI(newContext);
+					this.context = newContext;
+				}
+			} catch (Exception e) {
+				LOGGER.warning("Invalid context from " + request.getSource().getHostAddress() + ":" + request.getSourcePort() + " (" + newContext + ")");
+				return false;
 			}
 		}
 
-		// Set lifetime on PUT or if option is set
-		if (lifeTimeUpdated || (request.getCode() == Code.PUT)) {
-			setLifeTime(newLifeTime);
-		}
-		
-		try {
-			URI check;
-			if (newContext.equals("")) {
-				check = new URI("coap", "", request.getSource().getHostAddress(), request.getSourcePort(), "", "", ""); // required to set port
-				context = check.toString().replace("@", "").replace("?", "").replace("#", ""); // URI is a silly class
-			} else {
-				check = new URI(context);
-			}
-		} catch (Exception e) {
-			LOGGER.warning(e.toString());
-			return false;
+		// set lifetime on first call
+		if (lifetimeTimer==null) {
+			setLifeTime(lifeTime);
 		}
 		
 		return updateEndpointResources(request.getPayloadString());
@@ -136,7 +147,7 @@ public class RDNodeResource extends CoapResource {
 				}
 			}
 			if (!resourceExist) {
-				subResource = new RDTagResource(next,true, this);
+				subResource = new RDTagResource(next, true, this);
 				resource.add(subResource);
 			}
 			resource = subResource;
@@ -182,6 +193,9 @@ public class RDNodeResource extends CoapResource {
 		
 		setParameters(exchange.advanced().getRequest());
 		
+		// reset lifetime
+		setLifeTime(this.lifeTime);
+		
 		// complete the request
 		exchange.respond(ResponseCode.CHANGED);
 		
@@ -209,7 +223,7 @@ public class RDNodeResource extends CoapResource {
 		}
 		
 		lifetimeTimer = new Timer();
-		lifetimeTimer.schedule(new ExpiryTask(this), lifeTime * 1000 + 2000);// from sec to ms
+		lifetimeTimer.schedule(new ExpiryTask(this), lifeTime * 1000 + 2000);// from sec to ms plus contingency time
 	
 	}
 		
@@ -220,48 +234,27 @@ public class RDNodeResource extends CoapResource {
 	 * for reading the humidity.
 	 */
 	private boolean updateEndpointResources(String linkFormat) {
-
-		Scanner scanner = new Scanner(linkFormat);
 		
-		scanner.useDelimiter(",");
-		List<String> pathResources = new ArrayList<String>();
-		while (scanner.hasNext()) {
-			pathResources.add(scanner.next());
-		}
-		for (String p : pathResources) {
-			scanner = new Scanner(p);
-
-			/*
-			 * get the path of the endpoint's resource. E.g. from
-			 * </readings/temp> it will select /readings/temp.
-			 */
-			String path = "", pathTemp = "";
-			if ((pathTemp = scanner.findInLine("</.*?>")) != null) {
-				path = pathTemp.substring(1, pathTemp.length() - 1);
-			} else {
-				scanner.close();
-				return false;
-			}
+		Set<WebLink> links = LinkFormat.parse(linkFormat);
+		
+		for (WebLink l : links) {
 			
-			CoapResource resource = addNodeResource(path);
-			/*
-			 * Since created the subResource, get all the attributes from
-			 * the payload. Each parameter is separated by a ";".
-			 */
-			scanner.useDelimiter(";");
-			//Clear attributes to make registration idempotent
-			for(String attribute:resource.getAttributes().getAttributeKeySet()){
+			CoapResource resource = addNodeResource(l.getURI().substring(l.getURI().indexOf("/")));
+			
+			// clear attributes to make registration idempotent
+			for (String attribute : resource.getAttributes().getAttributeKeySet()) {
 				resource.getAttributes().clearAttribute(attribute);
 			}
-			while (scanner.hasNext()) {
-				LinkAttribute attr = LinkAttribute.parse(scanner.next());
-				if (attr.getValue() == null)
-					resource.getAttributes().addAttribute(attr.getName());
-				else resource.getAttributes().addAttribute(attr.getName(), attr.getValue());
+			
+			// copy to resource list
+			for (String attribute : l.getAttributes().getAttributeKeySet()) {
+				for (String value : l.getAttributes().getAttributeValues(attribute)) {
+					resource.getAttributes().addAttribute(attribute, value);
+				}
 			}
-			resource.getAttributes().addAttribute(LinkFormat.END_POINT, getEndpointIdentifier());
+			
+			resource.getAttributes().setAttribute(LinkFormat.END_POINT, getEndpointName());
 		}
-		scanner.close();
 		
 		return true;
 	}
@@ -286,28 +279,17 @@ public class RDNodeResource extends CoapResource {
 		return builder.toString();
 	}
 
-	public String toLinkFormatItem(Resource resource) {
-		StringBuilder linkFormat = new StringBuilder();
-		
-		linkFormat.append("<"+getContext());
-		linkFormat.append(resource.getURI().substring(this.getURI().length()));
-		linkFormat.append(">");
-		
-		return linkFormat.append( LinkFormat.serializeResource(resource).toString().replaceFirst("<.+>", "") ).toString();
-	}
-	
-
 	private void buildLinkFormat(Resource resource, StringBuilder builder, List<String> query) {
 		if (resource.getChildren().size() > 0) {
 
 			// Loop over all sub-resources
 			for (Resource res : resource.getChildren()) {
 				if (LinkFormat.matches(res, query)) {
-
-					// Convert Resource to string representation and add
-					// delimiter
-					builder.append(toLinkFormatItem(res));
-					builder.append(',');
+					// Convert Resource to string representation
+					builder.append("<"+getContext());
+					builder.append(res.getURI().substring(this.getURI().length()));
+					builder.append(">");
+					builder.append( LinkFormat.serializeResource(res).toString().replaceFirst("<.+>", "") );
 				}
 				// Recurse
 				buildLinkFormat(res, builder, query);
@@ -321,8 +303,8 @@ public class RDNodeResource extends CoapResource {
 	 * Setter And Getter
 	 */
 
-	public String getEndpointIdentifier() {
-		return endpointIdentifier;
+	public String getEndpointName() {
+		return endpointName;
 	}
 
 	public String getDomain() {
@@ -330,7 +312,7 @@ public class RDNodeResource extends CoapResource {
 	}
 
 	public String getEndpointType() {
-		return endpointType;
+		return endpointType==null ? "" : endpointType;
 	}
 
 	public void setEndpointType(String endpointType) {

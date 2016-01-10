@@ -44,40 +44,41 @@ public class RDLookUpDomainResource extends CoapResource {
 		
 		Collection<Resource> resources = rdResource.getChildren();
 		TreeSet<String> availableDomains = new TreeSet<String>(); 
-		String domainQuery = ""; 
+		String domainQuery = null; 
 		Iterator<Resource>  resIt = resources.iterator();
 		String result = "";
 		
-		List<String> queries = exchange.getRequestOptions().getUriQuery();
-		for (String query:queries) {
-			LinkAttribute attr = LinkAttribute.parse(query);
-			if (attr.getName().equals(LinkFormat.DOMAIN))
-				domainQuery = attr.getValue();
+		List<String> query = exchange.getRequestOptions().getUriQuery();
+		for (String q : query) {
+			KeyValuePair kvp = KeyValuePair.parse(q);
+			
+			if (LinkFormat.DOMAIN.equals(kvp.getName())) {
+				domainQuery = kvp.getValue();
+			}
 		}
 		
-		while (resIt.hasNext()){
+		while (resIt.hasNext()) {
 			Resource res = resIt.next();
 			if (res.getClass() == RDNodeResource.class){
 				RDNodeResource node = (RDNodeResource) res;
-				if ((domainQuery.isEmpty() || domainQuery.equals(node.getDomain()))){
+				if (domainQuery==null || domainQuery.equals(node.getDomain()) ) {
 					availableDomains.add(node.getDomain());
 				}
 			}
 		}
-		if(availableDomains.isEmpty()){
+		
+		if (availableDomains.isEmpty()) {
 			exchange.respond(ResponseCode.NOT_FOUND);
-			
-		} else{
-			Iterator<String>  domIt = availableDomains.iterator();
+		} else {
+			Iterator<String> domIt = availableDomains.iterator();
 						
-			while (domIt.hasNext()){
+			while (domIt.hasNext()) {
 				String dom = domIt.next();
 				result += "</rd>;"+LinkFormat.DOMAIN+"=\""+dom+"\",";
 			}
-
+			
+			// also remove trailing comma
 			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 		}
-				
 	}
-
 }

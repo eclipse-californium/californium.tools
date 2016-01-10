@@ -47,38 +47,42 @@ public class RDLookUpResResource extends CoapResource {
 		List<String> toRemove = new ArrayList<String>(); 
 		
 		List<String> query = exchange.getRequestOptions().getUriQuery();
-		
 		for (String q : query) {
-			LinkAttribute attr = LinkAttribute.parse(q);
-			if(attr.getName().equals(LinkFormat.DOMAIN)){
-				domainQuery=attr.getValue();
-				if(domainQuery==null){
-					exchange.respond(ResponseCode.BAD_REQUEST);
+			KeyValuePair kvp = KeyValuePair.parse(q);
+			
+			if (LinkFormat.DOMAIN.equals(kvp.getName())) {
+				if (kvp.isFlag()) {
+					exchange.respond(ResponseCode.BAD_REQUEST, "Empty domain query");
 					return;
+				} else {
+					domainQuery = kvp.getValue();
+					toRemove.add(q);
 				}
-				toRemove.add(q);
 			}
-			if(attr.getName().equals(LinkFormat.END_POINT)){
-				endpointQuery = attr.getValue();
-				if(endpointQuery==null){
-					exchange.respond(ResponseCode.BAD_REQUEST);
+			
+			if (LinkFormat.END_POINT.equals(kvp.getName())) {
+				if (kvp.isFlag()) {
+					exchange.respond(ResponseCode.BAD_REQUEST, "Empty endpoint query");
 					return;
+				} else {
+					endpointQuery = kvp.getValue();
+					toRemove.add(q);
 				}
-				toRemove.add(q);
 			}
 		}
 		
-		
-		Iterator<Resource>  resIt = resources.iterator();
-				
+		// clear handled queries from list
 		query.removeAll(toRemove);
+		
+		// check registered resources
+		Iterator<Resource>  resIt = resources.iterator();
 		
 		while (resIt.hasNext()) {
 			Resource res = resIt.next();
 			if (res instanceof RDNodeResource) {
 				RDNodeResource node = (RDNodeResource) res;
-				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain())) && 
-					 (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointIdentifier())) ) {
+				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain()))
+					 && (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointName())) ) {
 					String link = node.toLinkFormat(query);
 					result += (!link.isEmpty()) ? link+"," : ""; 
 				}
@@ -88,8 +92,8 @@ public class RDLookUpResResource extends CoapResource {
 		if (result.isEmpty()) {
 			exchange.respond(ResponseCode.NOT_FOUND);
 		} else {
-			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length() - 1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
+			// also remove trailing comma
+			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 		}
-
 	}
 }

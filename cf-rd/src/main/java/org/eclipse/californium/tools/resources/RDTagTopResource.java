@@ -44,11 +44,14 @@ public class RDTagTopResource extends CoapResource {
 
 	@Override
 	public void handleGET(CoapExchange exchange) {
-		List<String> query = exchange.getRequestOptions().getUriQuery();
 		HashMap<String, String> tags = new HashMap<String, String>();
 		String resourcePath = "";
 		String ep = "";
+		
+		List<String> query = exchange.getRequestOptions().getUriQuery();
 		for (String q : query) {
+			KeyValuePair kvp = KeyValuePair.parse(q);
+			
 			if (q.startsWith("ep=")) {
 				ep = q.substring(q.indexOf("=") + 1).replace("\"", "");
 			} else if (q.startsWith("res=")) {
@@ -62,15 +65,17 @@ public class RDTagTopResource extends CoapResource {
 				}
 			}
 		}
-		if (resourcePath.startsWith("/")) {
+		
+		while (resourcePath.startsWith("/")) {
 			resourcePath = resourcePath.substring(1);
 		}
+		
 		if (!ep.isEmpty() && !resourcePath.isEmpty() && tags.isEmpty()) {
 			// Get Tags of resource
 			RDTagResource target = null;
 			for (Resource res : rdResource.getChildren()) {
 				if (res.getClass() == RDNodeResource.class) {
-					if (((RDNodeResource) res).getEndpointIdentifier().equals(ep)) {
+					if (((RDNodeResource) res).getEndpointName().equals(ep)) {
 						if (getSubResource(res, resourcePath) != null && getSubResource(res, resourcePath).getClass() == RDTagResource.class) {
 							target = (RDTagResource) getSubResource(res, resourcePath);
 							break;
@@ -167,7 +172,7 @@ public class RDTagTopResource extends CoapResource {
 			}
 			for (Resource res : rdResource.getChildren()) {
 				if (res.getClass() == RDNodeResource.class) {
-					if (((RDNodeResource) res).getEndpointIdentifier().equals(ep)) {
+					if (((RDNodeResource) res).getEndpointName().equals(ep)) {
 						targets.add(getSubResource(res, resourcePath));
 						break;
 					}
@@ -177,7 +182,7 @@ public class RDTagTopResource extends CoapResource {
 			LinkedList<Resource> todo = new LinkedList<Resource>();
 			for (Resource res : rdResource.getChildren()) {
 				if (res.getClass() == RDNodeResource.class) {
-					if (((RDNodeResource) res).getEndpointIdentifier().equals(ep)) {
+					if (((RDNodeResource) res).getEndpointName().equals(ep)) {
 						todo.add(res);
 						break;
 					}
