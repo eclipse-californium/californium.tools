@@ -28,6 +28,7 @@
 		<module>cf-coapbench</module>
 		<module>cf-server</module>
 		<module>cf-rd</module>
+		<module>cf-polyfill</module>
 	</modules>
 
 	<repositories>

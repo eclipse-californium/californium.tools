@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+
+
+<script src="http://localhost:8080/coap.js" type="application/javascript"></script>
+<script type="application/javascript">
+    function encode(r){
+        return r.replace(/[\x26\x0A\<>'"]/g,function(r){return"&#"+r.charCodeAt(0)+";"})
+    }
+
+    var request = new CoapRequest();
+    request.open('GET', 'coap://localhost:5683/apps/instances', true);
+    request.onload = function () {
+        document.write("<pre>"+encode(request.responseText)+"</pre>");
+    };
+    request.send();
+</script>
+</body>
+</html>
