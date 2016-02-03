@@ -1,0 +1,31 @@
+<button class="btn btn-xs btn-primary pull-right refresh"><i class="fa fa-refresh"></i></button>
+<h5>System</h5>
+<ul class="nav nav-pills nav-stacked">
+<li>Libraries</li>
+<li><a href="#newlib"><i class="fa fa-plus"></i> New Library</a></li>
+<% _.each(libs, function(lib){ %>
+<li><a href="#lib/<%=lib.name %>"><%=lib.name %></a></li>
+<% }); %> 
+<li>Applications</li>
+<li><a href="#new"><i class="fa fa-plus"></i> New Script</a></li>
+<% _.each(apps, function(app){ %>
+<li><a href="#app/<%=app.name %>"><%=app.name %></a></li>
+
+<% _.each(app_instances, function(app_instance){
+if (app_instance.app == app.name) {
+%>
+	<li class="instance">
+		<a href="#app_instance/<%=app_instance.name %>">
+			<% if (app_instance.running == 'start') { %>
+				<i class="fa fa-play"></i>
+			<% } %>
+			<% if (app_instance.running == 'stop') { %>
+				<i class="fa fa-stop"></i>
+			<% } %>
+			<%=app_instance.name %>
+		</a>
+	</li>
+<% }
+}); %> 
+<% }); %> 
+</ul> 

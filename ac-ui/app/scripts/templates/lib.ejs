@@ -1,0 +1,10 @@
+<% if(!obj.new){ %>
+<h1 style="margin-top:0">Library: <%=obj.name %></h1>
+<textarea></textarea>
+<button class="pull-right btn btn-lg btn-success" id="update"><i class="fa fa-floppy-o"></i> Update</button>
+<button class="btn btn-lg btn-danger" id="delete"><i class="fa fa-trash"></i> Delete</button>
+<% } else { %> 
+<input class="form-control input-lg lib_name" placeholder="Library Name" /> 
+<textarea></textarea>
+<button class="pull-right btn btn-lg btn-success" id="save"><i class="fa fa-floppy-o"></i> Save</button>
+<% } %>

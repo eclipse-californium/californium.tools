@@ -1,0 +1,25 @@
+<% if (running == 'stop') { %>
+<button class="btn btn-success pull-right start"><i class="fa fa-play"></i> Start</button>
+<% } %>
+<% if (running == 'start') { %>
+<button class="btn btn-danger pull-right stop"><i class="fa fa-stop"></i> Stop</button>
+<a class="btn btn-info pull-right test_app" href="#app_instance/<%=obj.name %>/test"><i class="fa fa-flask"></i> Test Application</a>
+<% } %>
+<h1 style="margin-top:0">App: <%=obj.name %></h1>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Key</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+<% _.map(obj, function(value, key) { %>
+    <tr>
+      <td><%= key %></td>
+      <td><%= value %></td>
+    </tr>
+<% }); %>
+  </tbody>
+</table>
+<button class="btn btn-lg btn-danger" id="delete"><i class="fa fa-trash"></i> Delete</button>

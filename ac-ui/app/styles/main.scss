@@ -1,0 +1,117 @@
+$icon-font-path: "/bower_components/bootstrap-sass-official/assets/fonts/bootstrap/";
+
+@import 'bootstrap-sass-official/assets/stylesheets/bootstrap.scss';
+
+.browsehappy {
+    margin: 0.2em 0;
+    background: #ccc;
+    color: #000;
+    padding: 0.2em 0;
+}
+
+/* Space out content a bit */
+body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.CodeMirror {
+  border: 1px solid #eee;
+  margin-bottom: 10px; 
+} 
+
+li.instance i{
+	font-size: 0.8em;
+    padding-left: 20px;
+    padding-right: 5px;
+}
+
+.app_name {
+	margin-bottom: 10px;
+}
+
+.nav{
+	overflow: auto;
+}
+
+.proxy_missing{
+    position:relative;
+    display:none;
+    .buttons{
+        top: 8px;
+        position: absolute;
+        right: 8px;
+    }
+}
+
+.test_app {
+    margin-right: 10px;
+}
+
+.uri{
+    margin-bottom: 10px;
+    .method {
+        padding:0;
+        border:0;
+        button { 
+            border-radius: 4px 0 0 4px;
+        }
+    }
+    input, .base_url{
+        border-left:0;
+    }
+}
+
+.status{
+    font-size: 1em;
+}
+
+.twitter-typeahead .tt-query, .twitter-typeahead .tt-hint {
+  margin-bottom: 0;
+}
+.tt-menu {
+  min-width: 160px;
+  width: 100%;
+  margin-top: 1px;
+  padding: 5px 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, .2);
+  *border-right-width: 2px;
+  *border-bottom-width: 2px;
+  -webkit-border-radius: 6px;
+  -moz-border-radius: 0px 0px 6px 6px;
+  border-radius: 0px 0px 6px 6px;
+  -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+  -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
+  -webkit-background-clip: padding-box;
+  -moz-background-clip: padding;
+  background-clip: padding-box;
+margin-left: -1px;
+}
+.tt-suggestion {
+  display: block;
+  padding: 3px 20px;
+}
+.tt-suggestion.tt-cursor, .tt-suggestion:hover {
+  color: #fff;
+  background-color: #0081c2;
+  background-image: -moz-linear-gradient(top, #0088cc, #0077b3);
+  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#0088cc), to(#0077b3));
+  background-image: -webkit-linear-gradient(top, #0088cc, #0077b3);
+  background-image: -o-linear-gradient(top, #0088cc, #0077b3);
+  background-image: linear-gradient(top, #0088cc, #0077b3);
+  background-repeat: repeat-x;
+  cursor: pointer;
+}
+.tt-suggestion.tt-cursor a {
+  color: #fff;
+}
+.tt-suggestion p {
+  margin: 0;
+}
+
+body .twitter-typeahead  input.tt-hint{
+    color:#AAA;
+}

@@ -1,0 +1,22 @@
+<% if(!obj.new){ %>
+<div class="row">
+  <div class="col-md-8">
+   <h1 style="margin-top:0">App: <%=obj.name %></h1>
+  </div>
+  <div class="col-md-4">
+    <div class="input-group">
+		<input type="text" class="form-control instance_name" placeholder="Instance Name...">
+		<span class="input-group-btn">
+			<button class="btn btn-success pull-right start" type="button"><i class="fa fa-play"></i> Start Instance</button>
+		</span>
+	</div>
+  </div>
+</div>
+<textarea></textarea>
+<button class="pull-right btn btn-lg btn-success" id="update"><i class="fa fa-floppy-o"></i> Update</button>
+<button class="btn btn-lg btn-danger" id="delete"><i class="fa fa-trash"></i> Delete</button>
+<% } else { %> 
+<input class="form-control input-lg app_name" placeholder="Script Name" /> 
+<textarea></textarea>
+<button class="pull-right btn btn-lg btn-success" id="save"><i class="fa fa-floppy-o"></i> Save</button>
+<% } %>

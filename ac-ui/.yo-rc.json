@@ -1,0 +1,12 @@
+{
+  "generator-backbone": {
+    "appPath": "app",
+    "appName": "Actinium-UI",
+    "coffee": false,
+    "testFramework": "mocha",
+    "templateFramework": "lodash",
+    "sassBootstrap": true,
+    "includeRequireJS": true
+  },
+  "generator-mocha": {}
+}
