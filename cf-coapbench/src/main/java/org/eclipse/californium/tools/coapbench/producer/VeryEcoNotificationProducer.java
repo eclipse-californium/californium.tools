@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Institute for Pervasive Computing, ETH Zurich and others.
+ * Copyright (c) 2015, 2016 Institute for Pervasive Computing, ETH Zurich and others.
  * 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -13,6 +13,7 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  *    Martin Lanter - architect and initial implementation
+ *    Kai Hudalla (Bosch Software Innovations GmbH) - use static reference to Serializer
  ******************************************************************************/
 package org.eclipse.californium.tools.coapbench.producer;
 
@@ -45,7 +46,6 @@ public class VeryEcoNotificationProducer implements Iterator<byte[]> {
 	
 	public void setIDs(byte[] token, int MID) {
 		this.token = token;
-		Serializer serializer = new Serializer();
 		Response response = new Response(ResponseCode.CONTENT);
 		
 		if (useCONs)
@@ -57,7 +57,7 @@ public class VeryEcoNotificationProducer implements Iterator<byte[]> {
 		response.setMID(MID);
 		response.setOptions(response.getOptions().setObserve(1));
 		
-		prototype = serializer.serialize(response).getBytes();
+		prototype = Serializer.serialize(response).getBytes();
 	}
 
 	public byte[] getToken() {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Institute for Pervasive Computing, ETH Zurich and others.
+ * Copyright (c) 2015, 2016 Institute for Pervasive Computing, ETH Zurich and others.
  * 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -13,6 +13,7 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  *    Martin Lanter - architect and initial implementation
+ *    Kai Hudalla (Bosch Software Innovations GmbH) - use static reference to Serializer
  ******************************************************************************/
 package org.eclipse.californium.tools.coapbench.producer;
 
@@ -65,7 +66,6 @@ public class EcoMessageProducer implements Iterator<RawData> {
 				ports[i] = ps.get(i);
 			Collections.shuffle(Arrays.asList(ports));
 
-			Serializer serializer = new Serializer();
 			messages = new ArrayList<byte[]>(1 << 16);
 			for (int i = 0; i < 1 << 16; i++) {
 				Request request = new Request(Code.GET);
@@ -73,7 +73,7 @@ public class EcoMessageProducer implements Iterator<RawData> {
 				request.setToken(new byte[0]);
 				request.setMID(i);
 				request.setURI(targetURI);
-				byte[] bytes = serializer.serialize(request).getBytes();
+				byte[] bytes = Serializer.serialize(request).getBytes();
 				messages.add(bytes);
 			}
 

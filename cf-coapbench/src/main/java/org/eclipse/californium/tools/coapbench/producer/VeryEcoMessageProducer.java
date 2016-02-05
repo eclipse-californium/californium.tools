@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Institute for Pervasive Computing, ETH Zurich and others.
+ * Copyright (c) 2015, 2016 Institute for Pervasive Computing, ETH Zurich and others.
  * 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -13,6 +13,7 @@
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
  *    Martin Lanter - architect and initial implementation
+ *    Kai Hudalla (Bosch Software Innovations GmbH) - use static reference to Serializer
  ******************************************************************************/
 package org.eclipse.californium.tools.coapbench.producer;
 
@@ -43,13 +44,12 @@ public class VeryEcoMessageProducer implements Iterator<byte[]> {
 	public VeryEcoMessageProducer() { }
 	
 	public void setURI(URI uri) {
-		Serializer serializer = new Serializer();
 		Request request = new Request(Code.GET);
 		request.setType(Type.CON);
 		request.setToken(new byte[0]);
 		request.setMID(0);
 		request.setURI(uri);
-		prototype = serializer.serialize(request).getBytes();
+		prototype = Serializer.serialize(request).getBytes();
 	}
 
 	@Override
