@@ -34,7 +34,7 @@ import org.eclipse.californium.core.server.resources.ResourceAttributes;
  */
 public class ImageResource extends CoapResource {
 
-	private String filePath = "src\\main\\resources\\data\\image\\";
+	private String filePath = "src/main/resources/data/image/";
 	private String fileName = "image";
 	
 	private List<Integer> supported = new ArrayList<Integer>();
