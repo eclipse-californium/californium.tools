@@ -34,7 +34,7 @@ import org.eclipse.californium.core.server.resources.ResourceAttributes;
  */
 public class ImageResource extends CoapResource {
 
-	private String filePath = "src\\main\\resources\\data\\image\\";
+	private String filePath = "src/main/resources/data/image/";
 	private String fileName = "image";
 	
 	private List<Integer> supported = new ArrayList<Integer>();
@@ -68,7 +68,6 @@ public class ImageResource extends CoapResource {
 		}
 
 		// File path must use platform specific separator
-		filePath = filePath.replace('\\', File.separatorChar);
 		String filename = filePath + fileName + "." + MediaTypeRegistry.toFileExtension(ct);
 
 		// load representation from file
