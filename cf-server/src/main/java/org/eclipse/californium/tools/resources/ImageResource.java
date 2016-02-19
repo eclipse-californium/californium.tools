@@ -67,7 +67,6 @@ public class ImageResource extends CoapResource {
 			}
 		}
 
-		// File path must use platform specific separator
 		String filename = filePath + fileName + "." + MediaTypeRegistry.toFileExtension(ct);
 
 		// load representation from file
