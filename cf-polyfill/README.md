@@ -14,7 +14,7 @@ The CoAP polyfill can be enabled by including the `coap.js` file hosted by the p
 
 Simple CoAP GET request:
 
-    var request = new CoapRequest();
+    var request = new CoAPRequest();
     request.open('GET', 'coap://localhost:5683', true);
     request.onload = function () {
       alert(request.responseText);
