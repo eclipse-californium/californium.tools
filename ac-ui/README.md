@@ -8,19 +8,21 @@ The Web application communicates with Actinium using CoAP requests via the [Cf-P
 
 ## Build Application
 
-1. Install *Node.js*, *NPM*, and *Grunt* (Node.js is only used to compile the JavaScript Web application)
+1. Install *Node.js* and *NPM* (Node.js is only used to compile the JavaScript Web application)
 > Get *Grunt* with `npm install -g grunt-cli` and `npm install -g grunt-bower`
 
-2. Install project dependencies
-
-        npm install
-
-3. Install bower
+2. Install *Bower* and *Grunt*
 > In case of problems try `npm install --save-dev bower`
 
         npm install -g bower
+        npm install -g grunt-cli
+        npm install -g grunt-bower
 
-4. Download the projects dependencies
+3. Download toolchain dependencies
+
+        npm install
+
+4. Download project dependencies
         
         bower install
 
