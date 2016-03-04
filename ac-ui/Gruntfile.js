@@ -21,7 +21,7 @@ module.exports = function (grunt) {
 
     // configurable paths
     var yeomanConfig = {
-        app: 'app',
+        app: 'src',
         dist: 'dist'
     };
 
@@ -37,7 +37,7 @@ module.exports = function (grunt) {
                 tasks: ['sass:server']
             },
             jsbeautifier: { 
-                files : ["app/scripts/**/*.js"],
+                files : ['<%= yeoman.app %>/scripts/**/*.js'],
                 tasks: ['jsbeautifier']
             },
             livereload: {
@@ -129,7 +129,7 @@ module.exports = function (grunt) {
             ]
         },
         jsbeautifier : {
-            files : ["app/scripts/**/*.js"],
+            files : ['<%= yeoman.app %>/scripts/**/*.js'],
             options : {
             }
         },
@@ -144,7 +144,7 @@ module.exports = function (grunt) {
         sass: {
           options: {
             sourceMap: true,
-            includePaths: ['app/bower_components']
+            includePaths: ['<%= yeoman.app %>/bower_components']
             },
           dist: {
             files: [{

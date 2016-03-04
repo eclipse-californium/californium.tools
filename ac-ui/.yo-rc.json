@@ -1,6 +1,6 @@
 {
   "generator-backbone": {
-    "appPath": "app",
+    "appPath": "src",
     "appName": "Actinium-UI",
     "coffee": false,
     "testFramework": "mocha",
