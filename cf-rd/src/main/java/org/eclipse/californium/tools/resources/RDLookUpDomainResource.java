@@ -59,7 +59,7 @@ public class RDLookUpDomainResource extends CoapResource {
 		
 		while (resIt.hasNext()) {
 			Resource res = resIt.next();
-			if (res.getClass() == RDNodeResource.class){
+			if (res instanceof RDNodeResource){
 				RDNodeResource node = (RDNodeResource) res;
 				if (domainQuery==null || domainQuery.equals(node.getDomain()) ) {
 					availableDomains.add(node.getDomain());

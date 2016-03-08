@@ -68,7 +68,7 @@ public class RDLookUpEPResource extends CoapResource {
 		
 		while (resIt.hasNext()) {
 			Resource res = resIt.next();
-			if (res.getClass() == RDNodeResource.class) {
+			if (res instanceof RDNodeResource) {
 				RDNodeResource node = (RDNodeResource) res;
 				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain()))
 				     && (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointName()))
