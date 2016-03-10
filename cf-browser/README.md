@@ -1,0 +1,1 @@
+A JavaFX client that uses the Californium client CoAP apis to discover and interact with servers

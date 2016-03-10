@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.*?>
+<?import javafx.scene.effect.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.control.*?>
+<?import java.lang.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="715.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.eclipse.californium.tools.GUIController">
+   <top>
+      <MenuBar prefHeight="31.0" prefWidth="585.0" BorderPane.alignment="CENTER">
+        <menus>
+          <Menu mnemonicParsing="false" text="File">
+            <items>
+              <MenuItem mnemonicParsing="false" text="Close" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Edit">
+            <items>
+              <MenuItem mnemonicParsing="false" text="Delete" />
+            </items>
+          </Menu>
+          <Menu mnemonicParsing="false" text="Log">
+            <items>
+                  <CheckMenuItem fx:id="logEnabled" mnemonicParsing="false" onAction="#toggleLogging" selected="true" text="Enable" />
+                  <MenuItem mnemonicParsing="false" onAction="#clearLog" text="Clear log" />
+                  <Menu mnemonicParsing="false" text="Level">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="INFO" />
+                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="CONFIG" />
+                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="FINE" />
+                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="FINER" />
+                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="ALL" />
+                    </items>
+                  </Menu>
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+   </top>
+   <bottom>
+      <TitledPane text="Log">
+         <content>
+            <AnchorPane>
+               <children>
+                  <TextArea fx:id="logArea" prefHeight="180.0" promptText="Log message area..." AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+               </children>
+            </AnchorPane>
+         </content>
+      </TitledPane>
+   </bottom>
+   <center>
+      <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" BorderPane.alignment="CENTER">
+        <items>
+          <AnchorPane minHeight="50.0" minWidth="50.0">
+               <children>
+                  <BorderPane prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <top>
+                        <TitledPane minHeight="50.0" minWidth="300.0" prefHeight="60.0" prefWidth="200.0" text="Target" BorderPane.alignment="CENTER">
+                           <content>
+                              <AnchorPane>
+                                 <children>
+                                    <ComboBox fx:id="uriBox" editable="true" prefWidth="150.0" AnchorPane.bottomAnchor="4.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="120.0" AnchorPane.topAnchor="0.0" />
+                                    <Button layoutX="150.0" mnemonicParsing="false" onAction="#discoveryRequest" text="DISCOVERY" textAlignment="JUSTIFY" AnchorPane.bottomAnchor="1.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                                 <padding>
+                                    <Insets top="1.0" />
+                                 </padding>
+                              </AnchorPane>
+                           </content>
+                        </TitledPane>
+                     </top>
+                     <center>
+                        <TitledPane animated="false" minHeight="100.0" minWidth="300.0" text="Request" BorderPane.alignment="CENTER">
+                          <content>
+                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                 <children>
+                                    <TextArea fx:id="requestArea" prefHeight="80.0" prefWidth="200.0" promptText="Request info..." AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                              </AnchorPane>
+                          </content>
+                        </TitledPane>
+                     </center>
+                     <bottom>
+                        <HBox alignment="CENTER" minWidth="100.0" spacing="5.0" BorderPane.alignment="CENTER">
+                           <children>
+                              <Button mnemonicParsing="false" onAction="#getRequest" prefWidth="80.0" text="GET" HBox.hgrow="ALWAYS" />
+                              <Button mnemonicParsing="false" onAction="#postRequest" prefWidth="80.0" text="POST" HBox.hgrow="ALWAYS" />
+                              <Button mnemonicParsing="false" onAction="#putRequest" prefWidth="80.0" text="PUT" HBox.hgrow="ALWAYS" />
+                              <Button mnemonicParsing="false" onAction="#deleteRequest" prefWidth="80.0" text="DELETE" HBox.hgrow="ALWAYS" />
+                           </children>
+                           <padding>
+                              <Insets right="5.0" />
+                           </padding>
+                        </HBox>
+                     </bottom>
+                  </BorderPane>
+               </children>
+            </AnchorPane>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
+               <children>
+                  <TitledPane fx:id="responseTitle" animated="false" text="Response" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <content>
+                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                           <children>
+                              <TextArea fx:id="responseArea" prefHeight="200.0" prefWidth="200.0" promptText="Response info..." AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="64.0" AnchorPane.topAnchor="0.0" />
+                              <ImageView fx:id="mediaTypeView" fitHeight="64.0" fitWidth="64.0" layoutX="628.0" layoutY="-7.0" pickOnBounds="true" preserveRatio="true" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="10.0">
+                                 <effect>
+                                    <DropShadow color="#1813b9" height="64.0" radius="31.5" width="64.0" />
+                                 </effect>
+                                 <cursor>
+                                    <Cursor fx:constant="OPEN_HAND" />
+                                 </cursor>
+                                 <image>
+                                    <Image url="@../../../../../resources/org/eclipse/californium/tools/images/unknown.png" />
+                                 </image>
+                              </ImageView>
+                           </children>
+                        </AnchorPane>
+                    </content>
+                  </TitledPane>
+               </children>
+            </AnchorPane>
+        </items>
+      </SplitPane>
+   </center>
+   <left>
+      <AnchorPane minWidth="200.0" BorderPane.alignment="TOP_CENTER">
+         <children>
+            <TitledPane animated="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="100.0" minWidth="100.0" prefHeight="390.0" prefWidth="141.0" text="Resources" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" BorderPane.alignment="CENTER">
+               <content>
+                  <TreeView fx:id="resourceTree" onMouseClicked="#onSelectResource" prefHeight="200.0" prefWidth="200.0" />
+               </content>
+            </TitledPane>
+         </children>
+      </AnchorPane>
+   </left>
+</BorderPane>
