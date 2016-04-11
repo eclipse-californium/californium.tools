@@ -38,11 +38,15 @@ public class RDNodeResource extends CoapResource {
 	private static final Logger LOGGER = Logger.getLogger(RDNodeResource.class.getCanonicalName());
 	
 	/*
+	 * Use one timer for keeping track of all RDNodeResource's lifeTime expiry tasks.
+	 */
+	private static final Timer lifetimeTimer = new Timer();
+	/*
 	 * After the lifetime expires, the endpoint has RD_VALIDATION_TIMEOUT seconds
 	 * to update its entry before the RD enforces validation and removes the endpoint
 	 * if it does not respond.
 	 */
-	private Timer lifetimeTimer;
+	private ExpiryTask lifetimeTimerTask;
 	
 	private int lifeTime = 86400;
 	
@@ -117,7 +121,7 @@ public class RDNodeResource extends CoapResource {
 		}
 
 		// set lifetime on first call
-		if (lifetimeTimer==null) {
+		if (lifetimeTimerTask==null) {
 			setLifeTime(lifeTime);
 		}
 		
@@ -163,8 +167,8 @@ public class RDNodeResource extends CoapResource {
 
 		LOGGER.info("Removing endpoint: "+getContext());
 		
-		if (lifetimeTimer!=null) {
-			lifetimeTimer.cancel();
+		if (lifetimeTimerTask != null) {
+			lifetimeTimerTask.cancel();
 		}
 		
 		super.delete();
@@ -185,8 +189,8 @@ public class RDNodeResource extends CoapResource {
 	@Override
 	public void handlePOST(CoapExchange exchange) {
 		
-		if (lifetimeTimer != null) {
-			lifetimeTimer.cancel();
+		if (lifetimeTimerTask != null) {
+			lifetimeTimerTask.cancel();
 		}
 		
 		LOGGER.info("Updating endpoint: "+getContext());
@@ -218,12 +222,12 @@ public class RDNodeResource extends CoapResource {
 		
 		lifeTime = newLifeTime;
 		
-		if (lifetimeTimer != null) {
-			lifetimeTimer.cancel();
+		if (lifetimeTimerTask != null) {
+			lifetimeTimerTask.cancel();
 		}
 		
-		lifetimeTimer = new Timer();
-		lifetimeTimer.schedule(new ExpiryTask(this), lifeTime * 1000 + 2000);// from sec to ms plus contingency time
+		lifetimeTimerTask = new ExpiryTask(this);
+		lifetimeTimer.schedule(lifetimeTimerTask, lifeTime * 1000 + 2000);// from sec to ms plus contingency time
 	
 	}
 		
@@ -327,7 +331,13 @@ public class RDNodeResource extends CoapResource {
 		this.context = context;
 	}
 	
-	class ExpiryTask extends TimerTask {
+	/**
+	 * RD Node Resource's Life Time Expiry Timer Task.  
+	 * This class deletes the RDNodeResource when the timer expires. The 
+	 * RDNodeResource class cancels this timer task whenever the end-point
+	 * post on resource "rd".
+	 */
+	private static class ExpiryTask extends TimerTask {
 		RDNodeResource resource;
 
 		public ExpiryTask(RDNodeResource resource) {
@@ -337,7 +347,7 @@ public class RDNodeResource extends CoapResource {
 
 		@Override
 		public void run() {
-			delete();
+			resource.delete();
 		}
 	}
 	
