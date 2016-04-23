@@ -16,19 +16,25 @@
 package org.eclipse.californium.tools.resources;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.californium.core.CoapResource;
+import org.eclipse.californium.core.Utils;
 import org.eclipse.californium.core.WebLink;
 import org.eclipse.californium.core.coap.CoAP;
+import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.Request;
-import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
 
@@ -42,7 +48,8 @@ public class RDNodeResource extends CoapResource {
 	 * to update its entry before the RD enforces validation and removes the endpoint
 	 * if it does not respond.
 	 */
-	private Timer lifetimeTimer;
+	private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(//
+			new Utils.DaemonThreadFactory("RDLifeTime#"));
 	
 	private int lifeTime = 86400;
 	
@@ -50,13 +57,17 @@ public class RDNodeResource extends CoapResource {
 	private String domain;
 	private String context;
 	private String endpointType = "";
+	private ScheduledFuture<?> ltExpiryFuture;
 	
 	public RDNodeResource(String ep, String domain) {
 		super(ep);
 		
 		// check length restriction, but tolerantly accept
 		int epLength = ep.getBytes(CoAP.UTF8_CHARSET).length;
-		if (epLength>63) LOGGER.warning("Endpoint Name too long: "+ep+" uses "+epLength+" bytes");
+		if (epLength>63) {
+			LOGGER.log(Level.WARNING, "Endpoint Name '{0}' too long ({1} bytes)",
+				new Object[] { ep, epLength } );
+		}
 		
 		this.endpointName = ep;
 		this.domain = domain;
@@ -96,32 +107,71 @@ public class RDNodeResource extends CoapResource {
 				contextUpdated = true;
 			}
 		}
-		
 		// apply context from source address or con variable
 		if (context==null || contextUpdated) {
 			try {
-				URI check;
-				if (newContext.isEmpty()) {
-					// context from source address
-					check = new URI("coap", "", request.getSource().getHostAddress(), request.getSourcePort(), "", "", ""); // required to set port
-					this.context = check.toString().replace("@", "").replace("?", "").replace("#", ""); // URI is a silly class...
-				} else {
-					// context from URI template variable
-					check = new URI(newContext);
-					this.context = newContext;
-				}
+				setContextFromRequest(request, newContext);
 			} catch (Exception e) {
-				LOGGER.warning("Invalid context from " + request.getSource().getHostAddress() + ":" + request.getSourcePort() + " (" + newContext + ")");
+				LOGGER.log(Level.WARNING, 
+						"Invalid context '{0}' from {1}:{2}  : {3}",
+						new Object[] { newContext, 
+								request.getSource().getHostAddress(), 
+								request.getSourcePort(), e });
+
 				return false;
 			}
 		}
 
 		// set lifetime on first call
-		if (lifetimeTimer==null) {
+		if (ltExpiryFuture==null) {
 			setLifeTime(lifeTime);
 		}
 		
 		return updateEndpointResources(request.getPayloadString());
+	}
+
+	private void setContextFromRequest(Request request, String newContext) 
+			throws URISyntaxException {
+		URI check;
+		String scheme, host = null;
+		int port = -1;
+		
+		// get the scheme from the request.		
+		scheme = request.getScheme();  
+		if (scheme == null || scheme.isEmpty()) {  // issue #38 & pr #42
+			// assume default scheme
+			scheme = CoAP.COAP_URI_SCHEME;
+			// Check if Uri-Port option is set and to default port.
+			if (request.getOptions().getUriPort() != null &&
+					request.getOptions().getUriPort().intValue() ==
+						CoAP.DEFAULT_COAP_SECURE_PORT) {
+				scheme = CoAP.COAP_SECURE_URI_SCHEME;
+			}
+			request.setScheme(scheme);
+		}
+		
+		if (!newContext.isEmpty()) {
+			// context from URI template variable
+			check = new URI(newContext);
+			// continue checking as "coap:///" is valid a URI.  
+			scheme = check.getScheme();
+			host = check.getHost();
+			port = check.getPort();
+		}
+		if(scheme == null) { // Should honor request's scheme
+			scheme = request.getScheme();
+		}
+		if (host == null) {  // RFC says: use source address when not set
+			host = request.getSource().getHostAddress();
+		}
+		if (port < 0) {  // RFC says: use source port when not set
+			port = request.getSourcePort();
+		}
+		
+		// set context from gathered values
+		check = new URI(scheme, null, host, port, null, null, null); // required to set port
+		// CoAP context template: coap[s?]://<host>:<port>
+		this.context = check.toString();
 	}
 
 	/*
@@ -163,8 +213,9 @@ public class RDNodeResource extends CoapResource {
 
 		LOGGER.info("Removing endpoint: "+getContext());
 		
-		if (lifetimeTimer!=null) {
-			lifetimeTimer.cancel();
+		if (ltExpiryFuture!=null) {
+			// delete may be called from within the future
+			ltExpiryFuture.cancel(false);
 		}
 		
 		super.delete();
@@ -185,8 +236,8 @@ public class RDNodeResource extends CoapResource {
 	@Override
 	public void handlePOST(CoapExchange exchange) {
 		
-		if (lifetimeTimer != null) {
-			lifetimeTimer.cancel();
+		if (ltExpiryFuture != null) {
+			ltExpiryFuture.cancel(true); // try to cancel before delete is called
 		}
 		
 		LOGGER.info("Updating endpoint: "+getContext());
@@ -218,12 +269,17 @@ public class RDNodeResource extends CoapResource {
 		
 		lifeTime = newLifeTime;
 		
-		if (lifetimeTimer != null) {
-			lifetimeTimer.cancel();
+		if (ltExpiryFuture != null) {
+			ltExpiryFuture.cancel(true);
 		}
 		
-		lifetimeTimer = new Timer();
-		lifetimeTimer.schedule(new ExpiryTask(this), lifeTime * 1000 + 2000);// from sec to ms plus contingency time
+		ltExpiryFuture = scheduler.schedule(new Runnable() {
+			@Override
+			public void run() {
+				delete();
+			}			
+		}, lifeTime + 2, // contingency time
+				TimeUnit.SECONDS);
 	
 	}
 		
