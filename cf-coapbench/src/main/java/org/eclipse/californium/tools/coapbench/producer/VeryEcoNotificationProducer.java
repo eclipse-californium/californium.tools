@@ -23,7 +23,7 @@ import java.util.Iterator;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.coap.Response;
-import org.eclipse.californium.core.network.serialization.Serializer;
+import org.eclipse.californium.core.network.serialization.UdpDataSerializer;
 import org.eclipse.californium.elements.RawData;
 
 /**
@@ -35,6 +35,7 @@ import org.eclipse.californium.elements.RawData;
  */
 public class VeryEcoNotificationProducer implements Iterator<byte[]> {
 
+	private final UdpDataSerializer serializer = new UdpDataSerializer();
 	private byte[] prototype;
 	private byte[] token;
 	private boolean useCONs = false;
@@ -57,7 +58,7 @@ public class VeryEcoNotificationProducer implements Iterator<byte[]> {
 		response.setMID(MID);
 		response.setOptions(response.getOptions().setObserve(1));
 		
-		prototype = Serializer.serialize(response).getBytes();
+		prototype = serializer.serializeResponse(response).getBytes();
 	}
 
 	public byte[] getToken() {

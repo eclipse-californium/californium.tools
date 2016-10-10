@@ -26,7 +26,7 @@ import java.util.Iterator;
 import org.eclipse.californium.core.coap.CoAP.Code;
 import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.coap.Request;
-import org.eclipse.californium.core.network.serialization.Serializer;
+import org.eclipse.californium.core.network.serialization.UdpDataSerializer;
 import org.eclipse.californium.elements.RawData;
 
 /**
@@ -48,6 +48,7 @@ public class EcoMessageProducer implements Iterator<RawData> {
 	
 	private int counter;
 	private int amount;
+	private final UdpDataSerializer serializer = new UdpDataSerializer();
 
 	public EcoMessageProducer(String targetURI){
 		this(targetURI, Integer.MAX_VALUE);
@@ -73,7 +74,7 @@ public class EcoMessageProducer implements Iterator<RawData> {
 				request.setToken(new byte[0]);
 				request.setMID(i);
 				request.setURI(targetURI);
-				byte[] bytes = Serializer.serialize(request).getBytes();
+				byte[] bytes = serializer.serializeRequest(request).getBytes();
 				messages.add(bytes);
 			}
 

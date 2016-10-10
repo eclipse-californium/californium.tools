@@ -35,7 +35,7 @@ import java.util.concurrent.CyclicBarrier;
 import org.eclipse.californium.core.coap.CoAP.Code;
 import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.coap.Request;
-import org.eclipse.californium.core.network.serialization.Serializer;
+import org.eclipse.californium.core.network.serialization.UdpDataSerializer;
 import org.eclipse.californium.tools.coapbench.producer.VeryEcoNotificationProducer;
 
 /**
@@ -46,7 +46,8 @@ import org.eclipse.californium.tools.coapbench.producer.VeryEcoNotificationProdu
 public class VirtualServer implements Runnable, VirtualDevice {
 	
 	public static final int TIMEOUT = 2000;
-	
+	private final UdpDataSerializer serializer = new UdpDataSerializer();
+
 	private DatagramSocket socket;
 	private DatagramPacket pSend;
 	private DatagramPacket pRecv;
@@ -196,8 +197,7 @@ public class VirtualServer implements Runnable, VirtualDevice {
 		req.setMID(0);
 		req.setType(Type.CON);
 		req.setURI(postURI);
-		
-		pSend.setData(Serializer.serialize(req).getBytes());
+		pSend.setData(serializer.serializeRequest(req).getBytes());
 		try {
 			pSend.setAddress(InetAddress.getByName(postURI.getHost()));
 		} catch (UnknownHostException e) {
@@ -256,7 +256,7 @@ public class VirtualServer implements Runnable, VirtualDevice {
 		}
 	}
 	
-	private int getIntFromWord(byte[] array) {
+	private static int getIntFromWord(byte[] array) {
 		if (array.length != 2) {
 			return -1;
 		}

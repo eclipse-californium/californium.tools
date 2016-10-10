@@ -23,7 +23,7 @@ import java.util.Iterator;
 import org.eclipse.californium.core.coap.CoAP.Code;
 import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.coap.Request;
-import org.eclipse.californium.core.network.serialization.Serializer;
+import org.eclipse.californium.core.network.serialization.UdpDataSerializer;
 import org.eclipse.californium.elements.RawData;
 
 /**
@@ -35,6 +35,7 @@ import org.eclipse.californium.elements.RawData;
  */
 public class VeryEcoMessageProducer implements Iterator<byte[]> {
 
+	private final UdpDataSerializer serializer = new UdpDataSerializer();
 	private byte[] prototype;
 
 	public VeryEcoMessageProducer(URI uri) {
@@ -49,7 +50,7 @@ public class VeryEcoMessageProducer implements Iterator<byte[]> {
 		request.setToken(new byte[0]);
 		request.setMID(0);
 		request.setURI(uri);
-		prototype = Serializer.serialize(request).getBytes();
+		prototype = serializer.serializeRequest(request).getBytes();
 	}
 
 	@Override
