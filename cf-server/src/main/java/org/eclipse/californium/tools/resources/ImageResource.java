@@ -66,7 +66,7 @@ public class ImageResource extends CoapResource {
 				return;
 			}
 		}
-		
+
 		String filename = filePath + fileName + "." + MediaTypeRegistry.toFileExtension(ct);
 
 		// load representation from file
