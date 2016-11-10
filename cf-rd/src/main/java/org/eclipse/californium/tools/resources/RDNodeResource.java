@@ -37,6 +37,7 @@ import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
+import org.eclipse.californium.core.server.resources.ResourceAttributes;
 
 
 public class RDNodeResource extends CoapResource {
@@ -49,7 +50,7 @@ public class RDNodeResource extends CoapResource {
 	 * if it does not respond.
 	 */
 	private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(//
-			new Utils.DaemonThreadFactory("RDLifeTime#"));
+			new Utils.DaemonThreadFactory());
 	
 	private int lifeTime = 86400;
 	
@@ -179,7 +180,7 @@ public class RDNodeResource extends CoapResource {
 	 * humidity. If the path is /readings/temp, temp will be a subResource
 	 * of readings, which is a subResource of the node.
 	 */
-	public CoapResource addNodeResource(String path) {
+	public CoapResource addResource(String path, ResourceAttributes attributes) {
 		Scanner scanner = new Scanner(path);
 		scanner.useDelimiter("/");
 		String next = "";
@@ -197,7 +198,10 @@ public class RDNodeResource extends CoapResource {
 				}
 			}
 			if (!resourceExist) {
-				subResource = new RDTagResource(next, true, this);
+				if (scanner.hasNext())//if the resource is not the end resource
+					subResource = new RDTagResource(next, true, this);
+				else
+					subResource = addEndResource(next, attributes);
 				resource.add(subResource);
 			}
 			resource = subResource;
@@ -207,7 +211,21 @@ public class RDNodeResource extends CoapResource {
 		scanner.close();
 		return subResource;
 	}
-
+	
+	/**
+     * this adds the end resource of a path with respect to the resource attributes
+     * eg: In the /sensors/door path this method adds the 'door' resource with it's resource attributes ct=41;rt="door";if="sensor"
+     *
+     * @param name       - name of the resource adding
+     * @param attributes - the specific attributes the resource has [ct, rt, if]
+     * @return 	- the resource with changed resource type
+     * @override - resource can be set to a sensor, actuator, composite or any other interface description
+     */
+	public CoapResource addEndResource(String name, ResourceAttributes attributes) {
+		CoapResource endResource = new RDTagResource(name, true, this);
+		return endResource;
+		}
+    
 	@Override
 	public void delete() {
 
@@ -289,13 +307,13 @@ public class RDNodeResource extends CoapResource {
 	 * register a resource for reading the temperature and another one
 	 * for reading the humidity.
 	 */
-	private boolean updateEndpointResources(String linkFormat) {
+	public boolean updateEndpointResources(String linkFormat) {
 		
 		Set<WebLink> links = LinkFormat.parse(linkFormat);
 		
-		for (WebLink l : links) {
+		for (WebLink link : links) {
 			
-			CoapResource resource = addNodeResource(l.getURI().substring(l.getURI().indexOf("/")));
+			CoapResource resource = addResource(link.getURI().substring(link.getURI().indexOf("/")),link.getAttributes());
 			
 			// clear attributes to make registration idempotent
 			for (String attribute : resource.getAttributes().getAttributeKeySet()) {
@@ -303,8 +321,8 @@ public class RDNodeResource extends CoapResource {
 			}
 			
 			// copy to resource list
-			for (String attribute : l.getAttributes().getAttributeKeySet()) {
-				for (String value : l.getAttributes().getAttributeValues(attribute)) {
+			for (String attribute : link.getAttributes().getAttributeKeySet()) {
+				for (String value : link.getAttributes().getAttributeValues(attribute)) {
 					resource.getAttributes().addAttribute(attribute, value);
 				}
 			}
@@ -369,6 +387,11 @@ public class RDNodeResource extends CoapResource {
 
 	public String getEndpointType() {
 		return endpointType==null ? "" : endpointType;
+	}
+
+	
+	public int getLifeTime() {
+		return lifeTime;
 	}
 
 	public void setEndpointType(String endpointType) {
