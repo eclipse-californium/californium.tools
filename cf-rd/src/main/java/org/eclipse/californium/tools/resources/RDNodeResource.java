@@ -199,9 +199,9 @@ public class RDNodeResource extends CoapResource {
 			}
 			if (!resourceExist) {
 				if (scanner.hasNext())//if the resource is not the end resource
-                    subResource = new RDTagResource(next, true, this);
-                else
-                    subResource = addEndResource(next, attributes);
+                    			subResource = new RDTagResource(next, true, this);
+                		else
+                    			subResource = addEndResource(next, attributes);
 				resource.add(subResource);
 			}
 			resource = subResource;
@@ -213,20 +213,20 @@ public class RDNodeResource extends CoapResource {
 	}
 
 	/**
-     * this adds the end resource of a path with respect to the resource attributes
-     * eg: In the /sensors/door path this method adds the 'door' resource with it's resource attributes ct=41;rt="door";if="sensor"
-     *
-     * @param name       - name of the resource adding
-     * @param attributes - the specific attributes the resource has [ct, rt, if]
-     * @return 	- the resource with changed resource type
-     * @override - resource can be set to a sensor, actuator, composite or any other interface description
-     */
+     	* this adds the end resource of a path with respect to the resource attributes
+     	* eg: In the /sensors/door path this method adds the 'door' resource with it's resource attributes ct=41;rt="door";if="sensor"
+     	*
+     	* @param name       - name of the resource adding
+     	* @param attributes - the specific attributes the resource has [ct, rt, if]
+     	* @return 	- the resource with changed resource type
+     	* @override - resource can be set to a sensor, actuator, composite or any other interface description
+     	*/
 	
-    public CoapResource addEndResource(String name, ResourceAttributes attributes) {
-        CoapResource endResource = new RDTagResource(name, true, this);
-        return endResource;
+    	public CoapResource addEndResource(String name, ResourceAttributes attributes) {
+        	CoapResource endResource = new RDTagResource(name, true, this);
+        	return endResource;
 
-    }
+    	}
     
 	@Override
 	public void delete() {
