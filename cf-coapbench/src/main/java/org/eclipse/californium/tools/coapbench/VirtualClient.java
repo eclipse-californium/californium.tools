@@ -57,17 +57,17 @@ public class VirtualClient implements Runnable, VirtualDevice {
 	private boolean checkLatency = false;
 	
 	public VirtualClient(URI uri) throws Exception {
-		this(uri, null);
+		this(uri, null, null, null);
 	}
 	
-	public VirtualClient(URI uri, InetSocketAddress addr) throws Exception {
+	public VirtualClient(URI uri, InetSocketAddress addr, String method, String payload) throws Exception {
 		this.mid = new byte[2];
 		this.latencies = new ArrayList<Integer>();
 		this.producer = new VeryEcoMessageProducer();
 		this.pSend = new DatagramPacket(new byte[0], 0);
 		this.pRecv = new DatagramPacket(new byte[100], 100);
 		this.runnable = true;
-		setURI(uri);
+		setURI(uri, method, payload);
 		bind(addr);
 	}
 	
@@ -79,12 +79,12 @@ public class VirtualClient implements Runnable, VirtualDevice {
 		this.socket.setSoTimeout(TIMEOUT);
 	}
 	
-	public void setURI(URI uri)  throws UnknownHostException {
+	public void setURI(URI uri, String method, String payload)  throws UnknownHostException {
 		destAddress = InetAddress.getByName(uri.getHost());
 		if (uri.getPort() == -1)
 			destPort = 5683;
 		else destPort = uri.getPort();
-		producer.setURI(uri);
+		producer.setURI(uri, method, payload);
 	}
 	
 	public void run() {

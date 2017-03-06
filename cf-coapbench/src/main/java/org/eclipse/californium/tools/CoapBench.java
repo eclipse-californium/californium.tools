@@ -24,7 +24,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
-import org.eclipse.californium.tools.coapbench.VirtualDeviceManager;
+import org.eclipse.californium.tools.coapbench.VirtualClientManager;
 
 
 public class CoapBench {
@@ -119,7 +119,7 @@ public class CoapBench {
 		}
 		
 		int[] series = convertSeries(clients);
-		VirtualDeviceManager manager = new VirtualDeviceManager(uri, bindSAddr);
+		VirtualClientManager manager = new VirtualClientManager(uri, bindSAddr, method, payload);
 		if (withLatency) manager.setEnableLatency(true);
 		manager.runConcurrencySeries(series, time*1000);
 		
