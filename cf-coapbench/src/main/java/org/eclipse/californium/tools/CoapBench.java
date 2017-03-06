@@ -16,11 +16,15 @@
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
-import org.eclipse.californium.tools.coapbench.VirtualDeviceManager;
+import org.eclipse.californium.tools.coapbench.VirtualClientManager;
 
 
 public class CoapBench {
@@ -35,6 +39,7 @@ public class CoapBench {
 	public static final int DEFAULT_CLIENTS = 1;
 	public static final int DEFAULT_SERVERS = 1;
 	public static final int DEFAULT_TIME = 30; // [s]
+	public static final String DEFAULT_METHOD = "GET";
 
 	public static final String DEFAULT_MASTER_ADDRESS = "localhost";
 	public static final int DEFAULT_MASTER_PORT = 58888; 
@@ -63,6 +68,8 @@ public class CoapBench {
 	public static void mainBench(String[] args) throws Exception {
 		String target = null;
 		String bindAddr = null;
+		String payload = null;
+		String method = DEFAULT_METHOD;
 		String clients = ""+DEFAULT_CLIENTS;
 		int time = DEFAULT_TIME;
 		int index = 0;
@@ -76,6 +83,10 @@ public class CoapBench {
 				time = Integer.parseInt(args[index+1]);
 			} else if ("-b".equals(arg)) {
 				bindAddr = args[index+1];
+			} else if ("-m".equals(arg)) {
+				method = args[index+1];
+			} else if ("-y".equals(arg)) {
+				payload = readPayload(args[index+1]);
 			} else if ("-latency".equals(arg)) {
 				withLatency = true; index++; continue;
 			} else if ("-h".equals(arg)) {
@@ -108,7 +119,7 @@ public class CoapBench {
 		}
 		
 		int[] series = convertSeries(clients);
-		VirtualDeviceManager manager = new VirtualDeviceManager(uri, bindSAddr);
+		VirtualClientManager manager = new VirtualClientManager(uri, bindSAddr, method, payload);
 		if (withLatency) manager.setEnableLatency(true);
 		manager.runConcurrencySeries(series, time*1000);
 		
@@ -194,6 +205,27 @@ public class CoapBench {
 		return series;
 	}
 	
+	private static String readPayload(String file) {
+		String payload = null;
+		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
+		    StringBuilder sb = new StringBuilder();
+		    String line = br.readLine();
+
+		    while (line != null) {
+		        sb.append(line);
+		        sb.append(System.lineSeparator());
+		        line = br.readLine();
+		    }
+		    payload = sb.toString();
+		} catch (FileNotFoundException e) {
+			System.out.println("File of the payload cannot be found: " + file);
+			System.exit(-1);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return payload;
+	}
+	
 	public static void printUsage() {
 		System.out.println(
 				"SYNOPSIS"
@@ -207,6 +239,10 @@ public class CoapBench {
 				+ "\n            This value can be of the form <from>:<step>:<to>, e.g., 10:2:16 for a subsequent run of 10, 12, 14, 16 clients."
 				+ "\n    -t TIME"
 				+ "\n            Limit the duration of the benchmark to TIME seconds (default is " + DEFAULT_TIME + ")."
+				+ "\n    -m METHOD"
+				+ "\n            Defines the method of the operation. The values can be GET, POST, PUT and DELETE (default is " + DEFAULT_METHOD + ")."
+				+ "\n    -y File"
+				+ "\n            This option expects a filename and specifies the payload of the operation. The file has to be a text file."
 				+ "\n    -b ADDRESS"
 				+ "\n            Bind the clients to the specified local address (by default the system chooses)."
 				+ "\n"
