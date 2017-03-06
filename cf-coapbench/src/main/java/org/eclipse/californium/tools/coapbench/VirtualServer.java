@@ -335,7 +335,7 @@ public class VirtualServer implements Runnable, VirtualDevice {
 	}
 	
 	@Override
-	public void setURI(URI uri)  throws UnknownHostException {
+	public void setURI(URI uri, String method, String payload)  throws UnknownHostException {
 		postURI = uri;
 	}
 

@@ -39,17 +39,39 @@ public class VeryEcoMessageProducer implements Iterator<byte[]> {
 	private byte[] prototype;
 
 	public VeryEcoMessageProducer(URI uri) {
-		setURI(uri);
+		setURI(uri, null, null);
 	}
 
 	public VeryEcoMessageProducer() { }
 	
-	public void setURI(URI uri) {
-		Request request = new Request(Code.GET);
+	public void setURI(URI uri, String method, String payload) {
+		
+		Request request;
+		
+		switch (method){
+			case("PUT"):
+			case("put"):
+				request = new Request(Code.PUT);
+				break;
+			case("POST"):
+			case("post"):
+				request = new Request(Code.POST);
+				break;
+			case("DELETE"):
+			case("delete"):
+				request = new Request(Code.DELETE);
+				break;
+			default:
+				request = new Request(Code.GET);
+				break;
+		}
+		
 		request.setType(Type.CON);
 		request.setToken(new byte[0]);
 		request.setMID(0);
 		request.setURI(uri);
+		if (payload != null)
+			request.setPayload(payload);
 		prototype = serializer.serializeRequest(request).getBytes();
 	}
 
