@@ -25,7 +25,7 @@ import java.util.ArrayList;
 public interface VirtualDevice {
 
 	public void bind(InetSocketAddress addr) throws Exception;
-	public void setURI(URI uri) throws UnknownHostException;
+	public void setURI(URI uri, String method, String payload) throws UnknownHostException;
 	
 	public boolean isCheckLatency();
 	public void setCheckLatency(boolean checkLatency);

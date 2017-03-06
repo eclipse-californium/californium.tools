@@ -177,7 +177,7 @@ public class ClientSlave {
 		List<String> parameters = command.getParameters();
 		if (parameters.size() > 0) {
 			URI uri = new URI(parameters.get(0));
-			vdm.setURI(uri);
+			vdm.setURI(uri, null);
 			vdm.start(clients, time * 1000);
 
 		} else if (command.has("-new-log")) {
@@ -217,7 +217,7 @@ public class ClientSlave {
 			
 			// setup the benchmark target
 			URI uri = new URI(parameters.get(0));
-			vdm.setURI(uri);
+			vdm.setURI(uri, null);
 			targetAddr = findSuitableAddress(uri.getHost());
 			if (targetAddr == null) {
 				System.out.println("Could not find a suitable interface to establish the connection; falling back to localhost.");
