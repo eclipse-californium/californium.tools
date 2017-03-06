@@ -37,6 +37,8 @@ public class VirtualClientManager {
 
 	private URI uri;
 	private InetSocketAddress bindAddr;
+	private String method;
+	private String payload;
 
 	private long timestamp;
 	private int count;
@@ -52,12 +54,14 @@ public class VirtualClientManager {
 	}
 	
 	public VirtualClientManager(URI uri) throws Exception {
-		this(uri, null);
+		this(uri, null, null, null);
 	}
 	
-	public VirtualClientManager(URI uri, InetSocketAddress bindAddr) throws Exception {
+	public VirtualClientManager(URI uri, InetSocketAddress bindAddr, String method, String payload) throws Exception {
 		this.uri = uri;
 		this.bindAddr = bindAddr;
+		this.method = method;
+		this.payload = payload;
 		this.clients = new ArrayList<VirtualClient>();
 		this.timer = new Timer();
 	}
@@ -98,7 +102,7 @@ public class VirtualClientManager {
 				clients.remove(i).close(); // close and remove
 		} else {
 			for (int i=clients.size(); i<c; i++) {
-				VirtualClient vc = new VirtualClient(uri, bindAddr);
+				VirtualClient vc = new VirtualClient(uri, bindAddr, method, payload);
 				vc.setCheckLatency(enableLatency);
 				clients.add(vc);
 			}
@@ -109,7 +113,7 @@ public class VirtualClientManager {
 	public void setURI(URI uri) throws UnknownHostException {
 		this.uri = uri;
 		for (VirtualClient vc:clients)
-			vc.setURI(uri);
+			vc.setURI(uri, method, payload);
 	}
 	
 	public void start(int count, int time) throws Exception {

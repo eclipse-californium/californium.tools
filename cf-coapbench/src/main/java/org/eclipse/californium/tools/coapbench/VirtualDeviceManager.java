@@ -43,6 +43,8 @@ public class VirtualDeviceManager {
 
 	private URI uri;
 	private InetSocketAddress bindAddr;
+	private String method;
+	private String payload;
 
 	private long timestamp;
 	private int testlength;
@@ -63,12 +65,14 @@ public class VirtualDeviceManager {
 	}
 	
 	public VirtualDeviceManager(URI uri) throws Exception {
-		this(uri, null);
+		this(uri, null, null, null);
 	}
 	
-	public VirtualDeviceManager(URI uri, InetSocketAddress bindAddr) throws Exception {
+	public VirtualDeviceManager(URI uri, InetSocketAddress bindAddr, String method, String payload) throws Exception {
 		this.uri = uri;
 		this.bindAddr = bindAddr;
+		this.method = method;
+		this.payload = payload;
 		this.devices = new ArrayList<VirtualDevice>();
 		this.timer = new Timer();
 		this.timestamp = 0L;
@@ -118,7 +122,7 @@ public class VirtualDeviceManager {
 
 		for (int i=devices.size(); i<d; i++) {
 			if (clients)
-				vd = new VirtualClient(uri, bindAddr);
+				vd = new VirtualClient(uri, bindAddr, method, payload);
 			else
 				vd = new VirtualServer(uri, bindAddr, true, confirmable, barrier);
 			vd.setCheckLatency(enableLatency);
@@ -135,11 +139,11 @@ public class VirtualDeviceManager {
 		return devices.size();
 	}
 	
-	public void setURI(URI uri) throws UnknownHostException {
+	public void setURI(URI uri, String method) throws UnknownHostException {
 		this.uri = uri;
 		System.err.println("VirtualDeviceManager URI set to " + uri + ".");
 		for (VirtualDevice vd:devices)
-			vd.setURI(uri);
+			vd.setURI(uri, method, payload);
 	}
 	
 	public void start(int count, int time) throws Exception {
