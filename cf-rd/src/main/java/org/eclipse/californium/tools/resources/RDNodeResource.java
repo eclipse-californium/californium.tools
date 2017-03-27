@@ -29,7 +29,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.eclipse.californium.core.CoapResource;
-import org.eclipse.californium.core.Utils;
 import org.eclipse.californium.core.WebLink;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
@@ -37,6 +36,7 @@ import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
+import org.eclipse.californium.elements.util.DaemonThreadFactory;
 
 
 public class RDNodeResource extends CoapResource {
@@ -49,7 +49,7 @@ public class RDNodeResource extends CoapResource {
 	 * if it does not respond.
 	 */
 	private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(//
-			new Utils.DaemonThreadFactory("RDLifeTime#"));
+			new DaemonThreadFactory("RDLifeTime#"));
 	
 	private int lifeTime = 86400;
 	
