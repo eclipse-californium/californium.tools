@@ -23,6 +23,7 @@ import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
 
+
 public class RDResource extends CoapResource {
 
 	public RDResource() {
@@ -40,22 +41,21 @@ public class RDResource extends CoapResource {
 	 */
 	@Override
 	public void handlePOST(CoapExchange exchange) {
-
+		
 		// get name and lifetime from option query
 		String endpointName = "";
 		String domain = "local";
 		RDNodeResource resource = null;
-
+		
 		ResponseCode responseCode;
 
-		LOGGER.info("Registration request from " + exchange.getSourceAddress().getHostName() + ":"
-				+ exchange.getSourcePort());
-
+		LOGGER.info("Registration request from "+exchange.getSourceAddress().getHostName()+":"+exchange.getSourcePort());
+		
 		List<String> query = exchange.getRequestOptions().getUriQuery();
 		for (String q : query) {
-
+			
 			KeyValuePair kvp = KeyValuePair.parse(q);
-
+			
 			if (LinkFormat.END_POINT.equals(kvp.getName()) && !kvp.isFlag()) {
 				endpointName = kvp.getValue();
 			}
@@ -67,48 +67,46 @@ public class RDResource extends CoapResource {
 
 		// mandatory variables
 		if (endpointName.isEmpty()) {
-			LOGGER.info("Missing Endpoint Name for " + exchange.getSourceAddress().getHostName() + ":"
-					+ exchange.getSourcePort());
+			LOGGER.info("Missing Endpoint Name for "+exchange.getSourceAddress().getHostName()+":"+exchange.getSourcePort());
 			exchange.respond(ResponseCode.BAD_REQUEST, "Missing Endpoint Name (?ep)");
 			return;
 		}
-
+		
 		// find already registered EP
 		for (Resource node : getChildren()) {
-			if (((RDNodeResource) node).getEndpointName().equals(endpointName)
-					&& ((RDNodeResource) node).getDomain().equals(domain)) {
+			if (((RDNodeResource) node).getEndpointName().equals(endpointName) && ((RDNodeResource) node).getDomain().equals(domain)) {
 				resource = (RDNodeResource) node;
 			}
 		}
-
-		if (resource == null) {
-
-			// uncomment to use random resource names instead of registered
-			// Endpoint Name
+		
+		if (resource==null) {
+			
+			// uncomment to use random resource names instead of registered Endpoint Name
 			/*
-			 * String randomName; do { randomName = Integer.toString((int)
-			 * (Math.random() * 10000)); } while (getChild(randomName) != null);
-			 */
-
+			String randomName;
+			do {
+				randomName = Integer.toString((int) (Math.random() * 10000));
+			} while (getChild(randomName) != null);
+			*/
+			
 			resource = new RDNodeResource(endpointName, domain);
 			add(resource);
-
+			
 			responseCode = ResponseCode.CREATED;
 		} else {
-
 			LOGGER.info("Existing registration , updating ep parameters if any");
 			resource.handlePOST(exchange);
 			return;
 		}
-
+		
 		// set parameters of resource or abort on failure
 		if (!resource.setParameters(exchange.advanced().getRequest())) {
 			resource.delete();
 			exchange.respond(ResponseCode.BAD_REQUEST);
 			return;
 		}
-
-		LOGGER.info("Adding new endpoint: " + resource.getContext());
+		
+		LOGGER.info("Adding new endpoint: "+resource.getContext());
 
 		// inform client about the location of the new resource
 		exchange.setLocationPath(resource.getURI());
