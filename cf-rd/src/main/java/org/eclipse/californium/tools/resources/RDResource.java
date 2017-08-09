@@ -94,7 +94,9 @@ public class RDResource extends CoapResource {
 			
 			responseCode = ResponseCode.CREATED;
 		} else {
-			responseCode = ResponseCode.CHANGED;
+			LOGGER.info("Existing registration , updating ep parameters if any");
+			resource.handlePOST(exchange);
+			return;
 		}
 		
 		// set parameters of resource or abort on failure
