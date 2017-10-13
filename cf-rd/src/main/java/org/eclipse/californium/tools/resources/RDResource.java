@@ -79,23 +79,23 @@ public class RDResource extends CoapResource {
 			}
 		}
 		
-		if (resource==null) {
-			
-			// uncomment to use random resource names instead of registered Endpoint Name
-			/*
-			String randomName;
-			do {
-				randomName = Integer.toString((int) (Math.random() * 10000));
-			} while (getChild(randomName) != null);
-			*/
-			
-			resource = new RDNodeResource(endpointName, domain);
-			add(resource);
-			
-			responseCode = ResponseCode.CREATED;
-		} else {
-			responseCode = ResponseCode.CHANGED;
+		//Endpoint unaware of its previous entry in RD: deleting it to put the latest entry. 
+		if (resource!=null) {
+			resource.delete();
 		}
+		
+		// uncomment to use random resource names instead of registered Endpoint Name
+		/*
+		String randomName;
+		do {
+			randomName = Integer.toString((int) (Math.random() * 10000));
+		} while (getChild(randomName) != null);
+		*/
+			
+		resource = new RDNodeResource(endpointName, domain);
+		add(resource);
+			
+		responseCode = ResponseCode.CREATED;
 		
 		// set parameters of resource or abort on failure
 		if (!resource.setParameters(exchange.advanced().getRequest())) {
