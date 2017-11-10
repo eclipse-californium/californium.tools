@@ -25,9 +25,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.util.logging.Level;
 
-import org.eclipse.californium.core.CaliforniumLogger;
 import org.eclipse.californium.core.Utils;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
@@ -38,7 +36,6 @@ import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.scandium.DTLSConnector;
-import org.eclipse.californium.scandium.ScandiumLogger;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
 import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
 import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
@@ -64,16 +61,8 @@ import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
  */
 public class ConsoleClient {
 
-	static {
-		CaliforniumLogger.initialize();
-		CaliforniumLogger.setLevel(Level.WARNING);
-		
-		ScandiumLogger.initialize();
-		ScandiumLogger.setLevel(Level.FINER);
-	}
-	
 	// the trust store file used for DTLS server authentication
-    private static final String TRUST_STORE_LOCATION = "certs/trustStore.jks";
+	private static final String TRUST_STORE_LOCATION = "certs/trustStore.jks";
 	private static final String TRUST_STORE_PASSWORD = "rootPass";
 
 	private static final String KEY_STORE_LOCATION = "certs/keyStore.jks";
@@ -194,8 +183,8 @@ public class ConsoleClient {
 			Certificate[] trustedCertificates = new Certificate[1];
 			trustedCertificates[0] = trustStore.getCertificate("root");
 
-			DtlsConnectorConfig.Builder builder = new DtlsConnectorConfig.Builder(new InetSocketAddress(0));
-
+			DtlsConnectorConfig.Builder builder = new DtlsConnectorConfig.Builder();
+			builder.setAddress(new InetSocketAddress(0));
 			builder.setTrustStore(trustedCertificates);
 			if (usePSK) {
 				InMemoryPskStore pskStore = new InMemoryPskStore();
@@ -215,7 +204,7 @@ public class ConsoleClient {
 
 			dtlsEndpoint = new CoapEndpoint(dtlsconnector, NetworkConfig.getStandard());
 			dtlsEndpoint.start();
-			EndpointManager.getEndpointManager().setDefaultSecureEndpoint(dtlsEndpoint);
+			EndpointManager.getEndpointManager().setDefaultEndpoint(dtlsEndpoint);
 		}
 		
 		// execute request
