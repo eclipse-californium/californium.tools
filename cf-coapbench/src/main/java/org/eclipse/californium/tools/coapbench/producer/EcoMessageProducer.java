@@ -27,6 +27,7 @@ import org.eclipse.californium.core.coap.CoAP.Code;
 import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.network.serialization.UdpDataSerializer;
+import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.RawData;
 
 /**
@@ -90,8 +91,7 @@ public class EcoMessageProducer implements Iterator<RawData> {
 
 	@Override
 	public RawData next() {
-		RawData raw = new RawData(
-				messages.get(ptr_message), address,ports[ptr_port]);
+		RawData raw = RawData.outbound(messages.get(ptr_message), new AddressEndpointContext(address, ports[ptr_port]), null, false);
 		if (++ptr_message >= 1 << 16) {
 			ptr_message = 0;
 			ptr_port++;
