@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2015 Institute for Pervasive Computing, ETH Zurich and others.
+ * Copyright (c) 2015, 2017 Institute for Pervasive Computing, ETH Zurich and others.
  * 
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
@@ -12,6 +12,7 @@
  * 
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
+ *    Bosch Software Innovations GmbH - migrate to SLF4J
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
@@ -25,8 +26,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.WebLink;
@@ -41,7 +42,7 @@ import org.eclipse.californium.elements.util.DaemonThreadFactory;
 
 public class RDNodeResource extends CoapResource {
 
-	private static final Logger LOGGER = Logger.getLogger(RDNodeResource.class.getCanonicalName());
+	private static final Logger LOGGER = LoggerFactory.getLogger(RDNodeResource.class.getCanonicalName());
 	
 	/*
 	 * After the lifetime expires, the endpoint has RD_VALIDATION_TIMEOUT seconds
@@ -65,7 +66,7 @@ public class RDNodeResource extends CoapResource {
 		// check length restriction, but tolerantly accept
 		int epLength = ep.getBytes(CoAP.UTF8_CHARSET).length;
 		if (epLength>63) {
-			LOGGER.log(Level.WARNING, "Endpoint Name '{0}' too long ({1} bytes)",
+			LOGGER.warn("Endpoint Name '{}' too long ({} bytes)",
 				new Object[] { ep, epLength } );
 		}
 		
@@ -112,8 +113,8 @@ public class RDNodeResource extends CoapResource {
 			try {
 				setContextFromRequest(request, newContext);
 			} catch (Exception e) {
-				LOGGER.log(Level.WARNING, 
-						"Invalid context '{0}' from {1}:{2}  : {3}",
+				LOGGER.warn(
+						"Invalid context '{}' from {}:{}: {}",
 						new Object[] { newContext, 
 								request.getSource().getHostAddress(), 
 								request.getSourcePort(), e });
