@@ -29,11 +29,12 @@
                   <MenuItem mnemonicParsing="false" onAction="#clearLog" text="Clear log" />
                   <Menu mnemonicParsing="false" text="Level">
                     <items>
+                      <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="ERROR" />
+                      <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="WARN" />
                       <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="INFO" />
-                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="CONFIG" />
-                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="FINE" />
-                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="FINER" />
-                        <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="ALL" />
+                      <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="DEBUG" />
+                      <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="TRACE" />
+                      <MenuItem mnemonicParsing="false" onAction="#setLogLevel" text="ALL" />
                     </items>
                   </Menu>
             </items>

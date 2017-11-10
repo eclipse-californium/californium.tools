@@ -23,6 +23,23 @@
 		<project.build.javaVersion>1.8</project.build.javaVersion>
 	</properties>
 
+	<dependencies>
+		<dependency>
+			<groupId>org.eclipse.californium</groupId>
+			<artifactId>californium-core</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<scope>compile</scope>
+		</dependency>
+	</dependencies>
+
 	<build>
 		<plugins>
 			<plugin>
@@ -32,11 +49,4 @@
 			</plugin>
 		</plugins>
 	</build>
-	<dependencies>
-		<dependency>
-			<groupId>org.eclipse.californium</groupId>
-			<artifactId>californium-core</artifactId>
-			<version>1.0.6</version>
-		</dependency>
-	</dependencies>
 </project>
