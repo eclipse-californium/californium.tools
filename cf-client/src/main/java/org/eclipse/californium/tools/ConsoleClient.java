@@ -188,7 +188,7 @@ public class ConsoleClient {
 			builder.setTrustStore(trustedCertificates);
 			if (usePSK) {
 				InMemoryPskStore pskStore = new InMemoryPskStore();
-				pskStore.addKnownPeer(new InetSocketAddress(request.getDestination(), request.getDestinationPort()),
+				pskStore.addKnownPeer(request.getDestinationContext().getPeerAddress(),
 						System.console().readLine("PSK Identity: "),
 						new String(System.console().readPassword("Secret Key (input hidden): ")).getBytes());
 				builder.setPskStore(pskStore);
