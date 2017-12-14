@@ -201,8 +201,10 @@ public class ConsoleClient {
 			}
 
 			DTLSConnector dtlsconnector = new DTLSConnector(builder.build(), null);
+			CoapEndpoint.CoapEndpointBuilder endpointBuilder = new CoapEndpoint.CoapEndpointBuilder();
+			endpointBuilder.setConnector(dtlsconnector);
 
-			dtlsEndpoint = new CoapEndpoint(dtlsconnector, NetworkConfig.getStandard());
+			dtlsEndpoint = endpointBuilder.build();
 			dtlsEndpoint.start();
 			EndpointManager.getEndpointManager().setDefaultEndpoint(dtlsEndpoint);
 		}

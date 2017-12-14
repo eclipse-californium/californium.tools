@@ -44,7 +44,9 @@ public class ResourceDirectory extends CoapServer {
 		// (default interface address instead of original destination)
 		for (InetAddress addr : EndpointManager.getEndpointManager().getNetworkInterfaces()) {
 			if (!addr.isLinkLocalAddress()) {
-				server.addEndpoint(new CoapEndpoint(new InetSocketAddress(addr, CoAP.DEFAULT_COAP_PORT)));
+				CoapEndpoint.CoapEndpointBuilder builder = new CoapEndpoint.CoapEndpointBuilder();
+				builder.setInetSocketAddress(new InetSocketAddress(addr, CoAP.DEFAULT_COAP_PORT));
+				server.addEndpoint(builder.build());
 			}
 		}
 
