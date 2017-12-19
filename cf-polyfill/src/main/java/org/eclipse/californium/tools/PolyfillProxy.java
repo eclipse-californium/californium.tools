@@ -107,7 +107,7 @@ public class PolyfillProxy
 			RequestDefinition requestDefintion = gson.fromJson(req.getReader().readLine(), RequestDefinition.class);
 
 			CoapClient client = new CoapClient(requestDefintion.url);
-			client.setTimeout(10000);
+			client.setTimeout(10000L);
 			CoapResponse response = null;
 			if (requestDefintion.method.equals("GET")){
 				response = client.get();
