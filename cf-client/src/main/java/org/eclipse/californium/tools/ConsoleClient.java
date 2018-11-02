@@ -34,7 +34,6 @@ import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
-import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
 import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
@@ -201,7 +200,7 @@ public class ConsoleClient {
 			}
 
 			DTLSConnector dtlsconnector = new DTLSConnector(builder.build(), null);
-			CoapEndpoint.CoapEndpointBuilder endpointBuilder = new CoapEndpoint.CoapEndpointBuilder();
+			CoapEndpoint.Builder endpointBuilder = new CoapEndpoint.Builder();
 			endpointBuilder.setConnector(dtlsconnector);
 
 			dtlsEndpoint = endpointBuilder.build();
