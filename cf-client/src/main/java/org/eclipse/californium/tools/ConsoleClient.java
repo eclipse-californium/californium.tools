@@ -12,18 +12,15 @@
  * 
  * Contributors:
  *    Matthias Kovatsch - creator and main architect
+ *    Achim Kraus (Bosch Software Innovations GmbH) - use SslContextUtil
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.cert.Certificate;
 
 import org.eclipse.californium.core.Utils;
@@ -34,9 +31,10 @@ import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
+import org.eclipse.californium.elements.util.SslContextUtil;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
-import org.eclipse.californium.scandium.dtls.cipher.CipherSuite;
+import org.eclipse.californium.scandium.dtls.CertificateType;
 import org.eclipse.californium.scandium.dtls.pskstore.InMemoryPskStore;
 
 /**
@@ -62,10 +60,10 @@ public class ConsoleClient {
 
 	// the trust store file used for DTLS server authentication
 	private static final String TRUST_STORE_LOCATION = "certs/trustStore.jks";
-	private static final String TRUST_STORE_PASSWORD = "rootPass";
+	private static final char[] TRUST_STORE_PASSWORD = "rootPass".toCharArray();
 
 	private static final String KEY_STORE_LOCATION = "certs/keyStore.jks";
-	private static final String KEY_STORE_PASSWORD = "endPass";
+	private static final char[] KEY_STORE_PASSWORD = "endPass".toCharArray();
 	
 	// resource URI path used for discovery
 	private static final String DISCOVERY_RESOURCE = "/.well-known/core";
@@ -174,29 +172,26 @@ public class ConsoleClient {
 		
 		if (request.getScheme().equals(CoAP.COAP_SECURE_URI_SCHEME)) {
 		
-			// load trust store
-			KeyStore trustStore = KeyStore.getInstance("JKS");
-			InputStream inTrust = new FileInputStream(TRUST_STORE_LOCATION);
-			trustStore.load(inTrust, TRUST_STORE_PASSWORD.toCharArray());
-			// load multiple certificates if needed
-			Certificate[] trustedCertificates = new Certificate[1];
-			trustedCertificates[0] = trustStore.getCertificate("root");
 
 			DtlsConnectorConfig.Builder builder = new DtlsConnectorConfig.Builder();
 			builder.setAddress(new InetSocketAddress(0));
-			builder.setTrustStore(trustedCertificates);
 			if (usePSK) {
 				InMemoryPskStore pskStore = new InMemoryPskStore();
 				pskStore.addKnownPeer(request.getDestinationContext().getPeerAddress(),
 						System.console().readLine("PSK Identity: "),
 						new String(System.console().readPassword("Secret Key (input hidden): ")).getBytes());
 				builder.setPskStore(pskStore);
-				builder.setSupportedCipherSuites(new CipherSuite[] {CipherSuite.TLS_PSK_WITH_AES_128_CCM_8});
 			} else {
-				KeyStore keyStore = KeyStore.getInstance("JKS");
-				InputStream in = new FileInputStream(KEY_STORE_LOCATION);
-				keyStore.load(in, KEY_STORE_PASSWORD.toCharArray());
-				builder.setIdentity((PrivateKey)keyStore.getKey("client", KEY_STORE_PASSWORD.toCharArray()), keyStore.getCertificateChain("client"), useRaw);
+				// load trust store
+				Certificate[] trustedCertificates = SslContextUtil.loadTrustedCertificates(
+						SslContextUtil.CLASSPATH_SCHEME + TRUST_STORE_LOCATION, "root",
+						TRUST_STORE_PASSWORD);
+				builder.setTrustStore(trustedCertificates);
+				SslContextUtil.Credentials credentials = SslContextUtil.loadCredentials(
+						SslContextUtil.CLASSPATH_SCHEME + KEY_STORE_LOCATION, "client", KEY_STORE_PASSWORD,
+						KEY_STORE_PASSWORD);
+				CertificateType type = useRaw ? CertificateType.RAW_PUBLIC_KEY : CertificateType.X_509;
+				builder.setIdentity(credentials.getPrivateKey(), credentials.getCertificateChain(), type);
 			}
 
 			DTLSConnector dtlsconnector = new DTLSConnector(builder.build(), null);
