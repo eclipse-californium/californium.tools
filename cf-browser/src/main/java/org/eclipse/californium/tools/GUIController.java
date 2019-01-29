@@ -167,8 +167,9 @@ public class GUIController {
     @FXML
     private void onSelectResource() {
         TreeItem<String> item = (TreeItem<String>) resourceTree.getSelectionModel().getSelectedItem();
-		if (item == null) // Handle case when no node in the tree is selected, just browsed into.
+		if (item == null) { // Handle case when no node in the tree is selected, just browsed into.
 			return;
+		}
         
         StringBuilder path = new StringBuilder(item.getValue());
         while(item.getParent() != null) {
