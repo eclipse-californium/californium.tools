@@ -172,10 +172,17 @@ public class GUIController {
 	@FXML
 	private void onSelectResource() {
 		TreeItem<String> item = (TreeItem<String>) resourceTree.getSelectionModel().getSelectedItem();
+		if (item == null) { // Handle case when no node in the tree is selected, just browsed into.
+			return;
+		}
 		StringBuilder path = new StringBuilder(item.getValue());
 		while (item.getParent() != null) {
 			item = item.getParent();
-			path.insert(0, item.getValue());
+			path.insert(0, item.getValue() + "/"); // Add slash separator to hierarchical paths.
+		}
+		// Strip the extra leading slash added in the loop.
+		if (path.toString().startsWith("/")) {
+			path.delete(0, 1);
 		}
 		// Prepend the coap uri
 		path.insert(0, COAP_PROTOCOL + coapHost);
