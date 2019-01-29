@@ -176,7 +176,9 @@ public class GUIController {
             path.insert(0, item.getValue()+"/"); // Add slash seperator to hierarchical paths.
         }
         // Strip the extra leading slash added in the loop.
-        if (path.toString().startsWith("/")) path.delete(0,1); 
+        if (path.toString().startsWith("/")) {
+		path.delete(0,1); 
+	}
         // Prepend the coap uri
         path.insert(0, COAP_PROTOCOL+coapHost);
         log.info("selected resource: "+path);
