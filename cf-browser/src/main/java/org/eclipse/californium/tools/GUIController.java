@@ -63,7 +63,6 @@ public class GUIController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
 	private static final String DEFAULT_URI = "coap://localhost:5683";
-	private static final String COAP_PROTOCOL = "coap://";
 
 	/** Combo boxes of coap URIs and resource URIs of discovered servers */
 	@FXML
@@ -140,7 +139,7 @@ public class GUIController {
 	private void discoveryRequest() {
 		Request request = new Request(CoAP.Code.GET);
 		coapHost = getHost();
-		request.setURI(COAP_PROTOCOL + coapHost + "/.well-known/core");
+		request.setURI(coapHost + "/.well-known/core");
 		LOG.info("Begin discovery, host={}", coapHost);
 		request.addMessageObserver(new MessageObserverAdapter() {
 
@@ -154,11 +153,14 @@ public class GUIController {
 
 				ObservableList<String> ress1 = FXCollections.observableArrayList();
 				ArrayList<String> ress2 = new ArrayList<>();
+				ress1.add(coapHost);
+				ress2.add(".");
+
 				while (scanner.hasNext()) {
 					String part = scanner.next();
 					String res = part.split(">")[0];
 					LOG.info(res);
-					ress1.add(COAP_PROTOCOL + coapHost + res);
+					ress1.add(coapHost + res);
 					ress2.add(res);
 				}
 				scanner.close();
@@ -185,7 +187,7 @@ public class GUIController {
 			path.delete(0, 1);
 		}
 		// Prepend the coap uri
-		path.insert(0, COAP_PROTOCOL + coapHost);
+		path.insert(0, coapHost);
 		LOG.info("selected resource: {}", path);
 		uriBox.getSelectionModel().select(path.toString());
 	}
@@ -230,9 +232,9 @@ public class GUIController {
 	private String getHost() {
 		String uri = uriBox.getSelectionModel().getSelectedItem();
 		StringTokenizer st = new StringTokenizer(uri, "/");
-		st.nextToken();
+		String protocol = st.nextToken();
 		String host = st.nextToken();
-		return host;
+		return protocol + "//" + host;
 	}
 
 	private void populateTree(List<String> ress) {

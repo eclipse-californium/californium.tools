@@ -18,8 +18,16 @@
 package org.eclipse.californium.tools;
 
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.URL;
 
+import org.eclipse.californium.core.network.CoapEndpoint;
+import org.eclipse.californium.core.network.EndpointManager;
+import org.eclipse.californium.scandium.DTLSConnector;
+import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
+import org.eclipse.californium.scandium.dtls.SingleNodeConnectionIdGenerator;
+import org.eclipse.californium.scandium.dtls.pskstore.StringPskStore;
+import org.eclipse.californium.scandium.util.ServerNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,8 +43,63 @@ import javafx.stage.Stage;
 public class GUIClientFX extends Application {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIClientFX.class);
+	private static final String PSK_IDENTITY_PREFIX = "cali.";
+	private static final byte[] PSK_SECRET = ".fornium".getBytes();
+
+	public static class PlugPskStore extends StringPskStore {
+
+		private final String identity;
+		private final byte[] secret;
+
+		public PlugPskStore(String id, byte[] secret) {
+			this.identity = id;
+			this.secret = secret;
+			LOG.info("DTLS-PSK-Identity: {})", identity);
+		}
+
+		public PlugPskStore(String id) {
+			identity = PSK_IDENTITY_PREFIX + id;
+			secret = null;
+			LOG.info("DTLS-PSK-Identity: {} ({} random bytes)", identity, (id.length() / 2));
+		}
+
+		@Override
+		public byte[] getKey(String identity) {
+			if (secret != null) {
+				return secret;
+			}
+			if (identity.startsWith(PSK_IDENTITY_PREFIX)) {
+				return PSK_SECRET;
+			}
+			return null;
+		}
+
+		@Override
+		public byte[] getKey(ServerNames serverNames, String identity) {
+			return getKey(identity);
+		}
+
+		@Override
+		public String getIdentityAsString(InetSocketAddress inetAddress) {
+			return identity;
+		}
+
+		@Override
+		public String getIdentityAsString(InetSocketAddress peerAddress, ServerNames virtualHost) {
+			return getIdentityAsString(peerAddress);
+		}
+	}
 
 	public static void main(String[] args) {
+		DtlsConnectorConfig.Builder dtlsBuilder = new DtlsConnectorConfig.Builder();
+		dtlsBuilder.setPskStore(new PlugPskStore("ui"));
+		dtlsBuilder.setConnectionIdGenerator(new SingleNodeConnectionIdGenerator(0));
+		DtlsConnectorConfig config = dtlsBuilder.build();
+		DTLSConnector dtls = new DTLSConnector(config);
+		CoapEndpoint.Builder coapBuilder = new CoapEndpoint.Builder();
+		coapBuilder.setConnector(dtls);
+		CoapEndpoint coapEndpoint = coapBuilder.build();
+		EndpointManager.getEndpointManager().setDefaultEndpoint(coapEndpoint);
 		launch(args);
 	}
 
