@@ -205,7 +205,11 @@ public class VirtualDeviceManager {
 		
 		if (!confirmable) {
 			client = new CoapClient(uri);
-			response = client.get();
+			try {
+				response = client.get();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		int sum = 0;

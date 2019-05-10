@@ -28,6 +28,7 @@ import java.util.Scanner;
 
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
+import org.eclipse.californium.elements.exception.ConnectorException;
 import org.eclipse.californium.tools.coapbench.Command;
 
 /**
@@ -192,7 +193,7 @@ public class ClientMaster implements Runnable {
 			s.send(CMD_OBSERVE_FAIL);
 	}
 	
-	private void post(Command command) throws InterruptedException {
+	private void post(Command command) throws InterruptedException, ConnectorException, IOException {
 		List<String> parameters = command.getParameters();
 		if (parameters.size() > 0) {
 			String uri = parameters.get(0);

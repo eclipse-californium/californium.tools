@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
+import org.eclipse.californium.elements.exception.ConnectorException;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.DefaultServlet;
@@ -109,14 +110,18 @@ public class PolyfillProxy
 			CoapClient client = new CoapClient(requestDefintion.url);
 			client.setTimeout(10000L);
 			CoapResponse response = null;
-			if (requestDefintion.method.equals("GET")){
-				response = client.get();
-			} else if (requestDefintion.method.equals("POST")){
-				response = client.post(requestDefintion.payload, MediaTypeRegistry.APPLICATION_JSON);
-			} else if (requestDefintion.method.equals("PUT")){
-				response = client.put(requestDefintion.payload, MediaTypeRegistry.APPLICATION_JSON);
-			} else if (requestDefintion.method.equals("DELETE")){
-				response = client.delete();
+			try {
+				if (requestDefintion.method.equals("GET")) {
+					response = client.get();
+				} else if (requestDefintion.method.equals("POST")) {
+					response = client.post(requestDefintion.payload, MediaTypeRegistry.APPLICATION_JSON);
+				} else if (requestDefintion.method.equals("PUT")) {
+					response = client.put(requestDefintion.payload, MediaTypeRegistry.APPLICATION_JSON);
+				} else if (requestDefintion.method.equals("DELETE")) {
+					response = client.delete();
+				}
+			} catch (ConnectorException ex) {
+				throw new ServletException(ex);
 			}
 			if(response != null) {
 				resp.getWriter().println(gson.toJson(new ResponseDefinition(response.getCode().value, response.getResponseText())));
