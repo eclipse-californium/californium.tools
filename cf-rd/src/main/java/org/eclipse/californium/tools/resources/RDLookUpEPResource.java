@@ -15,8 +15,9 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
@@ -36,31 +37,46 @@ public class RDLookUpEPResource extends CoapResource {
 	public RDLookUpEPResource(String resourceIdentifier, RDResource rd) {
 		super(resourceIdentifier);
 		this.rdResource = rd;
+		getAttributes().addResourceType("core.rd-lookup-res");
+		getAttributes().addContentType(MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 	}
 
 	
 	@Override
 	public void handleGET(CoapExchange exchange) {
 		Collection<Resource> resources = rdResource.getChildren();
-		String result = "";
-		String domainQuery = "";
+		List<String> candidates = new ArrayList<>();
+		String sectorQuery = "";
 		String endpointQuery = "";
 		TreeSet<String> endpointTypeQuery = new TreeSet<String>();
+		boolean countPresent = false;
+		int count = 0;
+		int page = 0;
+		HashMap<String, String> extraAttrsQuery = new HashMap<>();
 
 		List<String> query = exchange.getRequestOptions().getUriQuery();
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			
-			if (LinkFormat.SECTOR.equals(kvp.getName())) {
-				domainQuery = kvp.getValue();
-			}
-			
-			if (LinkFormat.END_POINT.equals(kvp.getName())) {
+			switch (kvp.getName()) {
+			case LinkFormat.SECTOR:
+				sectorQuery = kvp.getValue();
+				break;
+			case LinkFormat.END_POINT:
 				endpointQuery = kvp.getValue();
-			}
-			
-			if (LinkFormat.END_POINT_TYPE.equals(kvp.getName())) {
-				Collections.addAll(endpointTypeQuery, kvp.getValue().split(" "));
+				break;
+			case LinkFormat.END_POINT_TYPE:
+				endpointTypeQuery.add(kvp.getValue());
+				break;
+			case LinkFormat.COUNT:
+        countPresent = true;
+				count = kvp.getIntValue();
+				break;
+			case LinkFormat.PAGE:
+					page = kvp.getIntValue();
+				break;
+			default:
+				extraAttrsQuery.put(kvp.getName(), kvp.getValue());
 			}
 		}
 		
@@ -70,26 +86,63 @@ public class RDLookUpEPResource extends CoapResource {
 			Resource res = resIt.next();
 			if (res instanceof RDNodeResource) {
 				RDNodeResource node = (RDNodeResource) res;
-				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain()))
+				if ( (sectorQuery.isEmpty() || sectorQuery.equals(node.getSector()))
 				     && (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointName()))
-					 && (endpointTypeQuery.isEmpty() || endpointTypeQuery.contains(node.getEndpointType())) ) {
+					 && (endpointTypeQuery.isEmpty() || node.getEndpointTypes().containsAll(endpointTypeQuery))
+					 && (extraAttrsQuery.isEmpty() || matchExtraAttrsQuery(extraAttrsQuery, node.getExtraAttrs()))) {
 				
-					result += "<"+node.getContext()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointName()+"\"";
-					result += ";"+LinkFormat.SECTOR+"=\""+node.getDomain()+"\"";
-					if(!node.getEndpointType().isEmpty()){
-						result += ";"+LinkFormat.RESOURCE_TYPE+"=\""+node.getEndpointType()+"\"";
+					String result = "";
+					result += "<"+node.getBase()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointName()+"\"";
+					result += ";"+LinkFormat.SECTOR+"=\""+node.getSector()+"\"";
+					if(!node.getEndpointTypes().isEmpty()){
+						for (String et : node.getEndpointTypes()) {
+							result += ";"+LinkFormat.END_POINT_TYPE+"=\""+et+"\"";
+						}
+					}
+					if (!node.getExtraAttrs().isEmpty()){
+						for (String key : node.getExtraAttrs().keySet()){
+							result += ";"+key+"=\""+node.getExtraAttrs().get(key)+"\"";
+						}
 					}
 					
-					result += ",";
+					candidates.add(result);
 				}
 			}
 		}
 		
-		if (result.isEmpty()) {
-			exchange.respond(ResponseCode.NOT_FOUND);
+		if ((count < 0) || (page < 0)) {
+			exchange.respond(ResponseCode.BAD_REQUEST);
+		}
+		else if (candidates.isEmpty() || ((count * page) >= candidates.size()) || (count == 0 && countPresent)) {
+			exchange.respond(ResponseCode.CONTENT);
 		} else {
+			int from, to;
+			if (countPresent) {
+				from = count * page;
+				to = (from + count > candidates.size()) ? candidates.size() : from + count;
+			}
+			else {
+				from = 0;
+				to = candidates.size();
+			}
+			String result = "";
+			for (String s : candidates.subList(from, to)) {
+				result += s + ",";
+			}
 			// also remove trailing comma
 			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 		}
+	}
+
+	private boolean matchExtraAttrsQuery(HashMap<String, String> queries, HashMap<String, String> nodeExtraAttrs) {
+		if (!nodeExtraAttrs.keySet().containsAll(queries.keySet())) {
+			return false;
+		}
+		for (String q : queries.keySet()) {
+			if (!nodeExtraAttrs.get(q).equals(queries.get(q))) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

@@ -28,7 +28,6 @@ public class RDLookUpTopResource extends CoapResource {
 		super(resourceIdentifier);
 		
 		getAttributes().addResourceType("core.rd-lookup");
-		add(new RDLookUpDomainResource("d", rd));
 		add(new RDLookUpEPResource("ep", rd));
 		add(new RDLookUpResResource("res", rd));
 	}

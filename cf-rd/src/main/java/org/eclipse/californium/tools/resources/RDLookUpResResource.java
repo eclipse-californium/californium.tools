@@ -35,32 +35,37 @@ public class RDLookUpResResource extends CoapResource {
 	public RDLookUpResResource(String resourceIdentifier, RDResource rd) {
 		super(resourceIdentifier);
 		this.rdResource = rd;
+		getAttributes().addResourceType("core.rd-lookup-ep");
+		getAttributes().addContentType(MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 	}
 
 	
 	@Override
 	public void handleGET(CoapExchange exchange) {
 		Collection<Resource> resources = rdResource.getChildren();
-		String result = "";
-		String domainQuery = "";
+		List<String> candidates = new ArrayList<>();
+		String sectorQuery = "";
 		String endpointQuery = "";
+		boolean countPresent = false;
+		int count = 0;
+		int page = 0;
 		List<String> toRemove = new ArrayList<String>(); 
 		
 		List<String> query = exchange.getRequestOptions().getUriQuery();
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			
-			if (LinkFormat.SECTOR.equals(kvp.getName())) {
+			switch (kvp.getName()) {
+			case LinkFormat.SECTOR:
 				if (kvp.isFlag()) {
-					exchange.respond(ResponseCode.BAD_REQUEST, "Empty domain query");
+					exchange.respond(ResponseCode.BAD_REQUEST, "Empty sector query");
 					return;
 				} else {
-					domainQuery = kvp.getValue();
+					sectorQuery = kvp.getValue();
 					toRemove.add(q);
 				}
-			}
-			
-			if (LinkFormat.END_POINT.equals(kvp.getName())) {
+				break;
+			case LinkFormat.END_POINT:
 				if (kvp.isFlag()) {
 					exchange.respond(ResponseCode.BAD_REQUEST, "Empty endpoint query");
 					return;
@@ -68,6 +73,16 @@ public class RDLookUpResResource extends CoapResource {
 					endpointQuery = kvp.getValue();
 					toRemove.add(q);
 				}
+				break;
+			case LinkFormat.COUNT:
+				countPresent = true;
+				count = kvp.getIntValue();
+				toRemove.add(q);
+				break;
+			case LinkFormat.PAGE:
+				page = kvp.getIntValue();
+				toRemove.add(q);
+				break;
 			}
 		}
 		
@@ -81,17 +96,30 @@ public class RDLookUpResResource extends CoapResource {
 			Resource res = resIt.next();
 			if (res instanceof RDNodeResource) {
 				RDNodeResource node = (RDNodeResource) res;
-				if ( (domainQuery.isEmpty() || domainQuery.equals(node.getDomain()))
+				if ( (sectorQuery.isEmpty() || sectorQuery.equals(node.getSector()))
 					 && (endpointQuery.isEmpty() || endpointQuery.equals(node.getEndpointName())) ) {
-					String link = node.toLinkFormat(query);
-					result += (!link.isEmpty()) ? link+"," : ""; 
+					candidates.addAll(node.toLinkFormat(query));
 				}
 			}
 		}
 		
-		if (result.isEmpty()) {
-			exchange.respond(ResponseCode.NOT_FOUND);
+		if ((count < 0) || (page < 0)) {
+			exchange.respond(ResponseCode.BAD_REQUEST);
+		} else if (candidates.isEmpty() || ((count * page) >= candidates.size()) || (count == 0 && countPresent)) {
+			exchange.respond(ResponseCode.CONTENT);
 		} else {
+			int from, to;
+			if (countPresent) {
+				from = count * page;
+				to = (from + count > candidates.size()) ? candidates.size() : from + count;
+			} else {
+				from = 0;
+				to = candidates.size();
+			}
+			String result = "";
+			for (String s : candidates.subList(from, to)) {
+				result += s;
+			}
 			// also remove trailing comma
 			exchange.respond(ResponseCode.CONTENT, result.substring(0, result.length()-1), MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 		}
