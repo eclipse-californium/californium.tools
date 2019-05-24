@@ -51,7 +51,7 @@ public class RDLookUpEPResource extends CoapResource {
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			
-			if (LinkFormat.DOMAIN.equals(kvp.getName())) {
+			if (LinkFormat.SECTOR.equals(kvp.getName())) {
 				domainQuery = kvp.getValue();
 			}
 			
@@ -75,7 +75,7 @@ public class RDLookUpEPResource extends CoapResource {
 					 && (endpointTypeQuery.isEmpty() || endpointTypeQuery.contains(node.getEndpointType())) ) {
 				
 					result += "<"+node.getContext()+">;"+LinkFormat.END_POINT+"=\""+node.getEndpointName()+"\"";
-					result += ";"+LinkFormat.DOMAIN+"=\""+node.getDomain()+"\"";
+					result += ";"+LinkFormat.SECTOR+"=\""+node.getDomain()+"\"";
 					if(!node.getEndpointType().isEmpty()){
 						result += ";"+LinkFormat.RESOURCE_TYPE+"=\""+node.getEndpointType()+"\"";
 					}

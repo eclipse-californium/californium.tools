@@ -52,7 +52,7 @@ public class RDLookUpDomainResource extends CoapResource {
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			
-			if (LinkFormat.DOMAIN.equals(kvp.getName())) {
+			if (LinkFormat.SECTOR.equals(kvp.getName())) {
 				domainQuery = kvp.getValue();
 			}
 		}
@@ -74,7 +74,7 @@ public class RDLookUpDomainResource extends CoapResource {
 						
 			while (domIt.hasNext()) {
 				String dom = domIt.next();
-				result += "</rd>;"+LinkFormat.DOMAIN+"=\""+dom+"\",";
+				result += "</rd>;"+LinkFormat.SECTOR+"=\""+dom+"\",";
 			}
 			
 			// also remove trailing comma

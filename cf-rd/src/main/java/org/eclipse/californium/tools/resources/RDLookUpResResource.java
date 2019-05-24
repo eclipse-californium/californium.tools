@@ -50,7 +50,7 @@ public class RDLookUpResResource extends CoapResource {
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			
-			if (LinkFormat.DOMAIN.equals(kvp.getName())) {
+			if (LinkFormat.SECTOR.equals(kvp.getName())) {
 				if (kvp.isFlag()) {
 					exchange.respond(ResponseCode.BAD_REQUEST, "Empty domain query");
 					return;

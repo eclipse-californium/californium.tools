@@ -60,7 +60,7 @@ public class RDResource extends CoapResource {
 				endpointName = kvp.getValue();
 			}
 
-			if (LinkFormat.DOMAIN.equals(kvp.getName()) && !kvp.isFlag()) {
+			if (LinkFormat.SECTOR.equals(kvp.getName()) && !kvp.isFlag()) {
 				domain = kvp.getValue();
 			}
 		}
