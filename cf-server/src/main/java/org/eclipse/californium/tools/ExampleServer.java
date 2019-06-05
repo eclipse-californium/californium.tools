@@ -15,12 +15,9 @@
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
-import java.util.concurrent.Executors;
-
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
-
 import org.eclipse.californium.tools.resources.FibonacciResource;
 import org.eclipse.californium.tools.resources.HelloWorldResource;
 import org.eclipse.californium.tools.resources.ImageResource;
@@ -35,8 +32,7 @@ public class ExampleServer {
 	
 	public static void main(String[] args) throws Exception {
 		CoapServer server = new CoapServer();
-		server.setExecutor(Executors.newScheduledThreadPool(4));
-		
+
 		server.add(new HelloWorldResource("hello"));
 		server.add(new FibonacciResource("fibonacci"));
 		server.add(new StorageResource("storage"));
