@@ -107,7 +107,7 @@ public class RDTagTopResource extends CoapResource {
 			} else {
 				StringBuilder linkFormat = new StringBuilder();
 				for (RDTagResource res : result) {
-					linkFormat.append("<" + res.getParentNode().getContext());
+					linkFormat.append("<" + res.getParentNode().getBase());
 					linkFormat.append(res.getPath().substring(res.getParentNode().getPath().length()));
 					linkFormat.append(">");
 					

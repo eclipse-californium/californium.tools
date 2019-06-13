@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.LinkFormat;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
@@ -33,6 +34,7 @@ public class RDResource extends CoapResource {
 	public RDResource(String resourceIdentifier) {
 		super(resourceIdentifier);
 		getAttributes().addResourceType("core.rd");
+		getAttributes().addContentType(MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 	}
 
 	/*
@@ -44,7 +46,7 @@ public class RDResource extends CoapResource {
 		
 		// get name and lifetime from option query
 		String endpointName = "";
-		String domain = "local";
+		String sector = "local";
 		RDNodeResource resource = null;
 		
 		ResponseCode responseCode;
@@ -61,7 +63,7 @@ public class RDResource extends CoapResource {
 			}
 
 			if (LinkFormat.SECTOR.equals(kvp.getName()) && !kvp.isFlag()) {
-				domain = kvp.getValue();
+				sector = kvp.getValue();
 			}
 		}
 
@@ -74,12 +76,12 @@ public class RDResource extends CoapResource {
 		
 		// find already registered EP
 		for (Resource node : getChildren()) {
-			if (((RDNodeResource) node).getEndpointName().equals(endpointName) && ((RDNodeResource) node).getDomain().equals(domain)) {
+			if (((RDNodeResource) node).getEndpointName().equals(endpointName) && ((RDNodeResource) node).getSector().equals(sector)) {
 				resource = (RDNodeResource) node;
 			}
 		}
-		
-		//Endpoint unaware of its previous entry in RD: deleting it to put the latest entry. 
+
+		//Endpoint unaware of its previous entry in RD: deleting it to put the latest entry.
 		if (resource!=null) {
 			resource.delete();
 		}
@@ -91,8 +93,8 @@ public class RDResource extends CoapResource {
 			randomName = Integer.toString((int) (Math.random() * 10000));
 		} while (getChild(randomName) != null);
 		*/
-			
-		resource = new RDNodeResource(endpointName, domain);
+
+		resource = new RDNodeResource(endpointName, sector);
 		add(resource);
 			
 		responseCode = ResponseCode.CREATED;
@@ -104,7 +106,7 @@ public class RDResource extends CoapResource {
 			return;
 		}
 		
-		LOGGER.info("Adding new endpoint: "+resource.getContext());
+		LOGGER.info("Adding new endpoint: "+resource.getBase());
 
 		// inform client about the location of the new resource
 		exchange.setLocationPath(resource.getURI());

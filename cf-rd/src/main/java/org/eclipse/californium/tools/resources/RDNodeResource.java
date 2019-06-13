@@ -18,10 +18,13 @@ package org.eclipse.californium.tools.resources;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.TimerTask;
+import java.util.TreeSet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -52,15 +55,16 @@ public class RDNodeResource extends CoapResource {
 	private static ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(//
 			new DaemonThreadFactory("RDLifeTime#"));
 	
-	private int lifeTime = 86400;
+	private int lifeTime = 90000;
 	
 	private String endpointName;
-	private String domain;
-	private String context;
-	private String endpointType = "";
+	private String sector;
+	private String base;
+	private TreeSet<String> endpointType = new TreeSet<>();
+	private HashMap<String, String> extraAttrs = new HashMap<>();
 	private ScheduledFuture<?> ltExpiryFuture;
 	
-	public RDNodeResource(String ep, String domain) {
+	public RDNodeResource(String ep, String sector) {
 		super(ep);
 		
 		// check length restriction, but tolerantly accept
@@ -71,53 +75,65 @@ public class RDNodeResource extends CoapResource {
 		}
 		
 		this.endpointName = ep;
-		this.domain = domain;
+		this.sector = sector;
 	}
 
 	/**
 	 * Updates the endpoint parameters from POST and PUT requests.
 	 *
-	 * @param request A POST or PUT request with a {?et,lt,con} URI Template query
+	 * @param request A POST or PUT request with a {?et,lt,base} URI Template query
 	 * 			and a Link Format payload.
 	 * 
 	 */
 	public boolean setParameters(Request request) {
 
-		boolean contextUpdated = false;
-		String newContext = "";
+		boolean baseUpdated = false;
+		String newBase = "";
 
 		List<String> query = request.getOptions().getUriQuery();
 		for (String q : query) {
-			
+
 			KeyValuePair kvp = KeyValuePair.parse(q);
-			
-			if (LinkFormat.END_POINT_TYPE.equals(kvp.getName()) && !kvp.isFlag()) {
-				this.endpointType = kvp.getValue();
+
+			// we parsed ep and sector already
+			if ((kvp.getName().equals(LinkFormat.END_POINT)) || (kvp.getName().equals(LinkFormat.SECTOR))) {
+				continue;
 			}
-			
-			if (LinkFormat.LIFE_TIME.equals(kvp.getName()) && !kvp.isFlag()) {
+
+			if (kvp.isFlag()) {
+				this.extraAttrs.put(kvp.getName(), "");
+				continue;
+			}
+
+			switch (kvp.getName()) {
+			case LinkFormat.END_POINT_TYPE:
+				this.endpointType.add(kvp.getValue());
+				break;
+			case LinkFormat.LIFE_TIME:
 				lifeTime = kvp.getIntValue();
 				if (lifeTime < 60) {
-					LOGGER.info("Enforcing minimal RD lifetime of 60 seconds (was "+lifeTime+")");
+					LOGGER.info("Enforcing minimal RD lifetime of 60 seconds (was " + lifeTime + ")");
 					lifeTime = 60;
 				}
-			}
-			
-			if (LinkFormat.CONTEXT.equals(kvp.getName()) && !kvp.isFlag()) {
-				newContext = kvp.getValue();
-				contextUpdated = true;
+				break;
+			case LinkFormat.BASE:
+				newBase = kvp.getValue();
+				baseUpdated = true;
+				break;
+			default:
+				this.extraAttrs.put(kvp.getName(), kvp.getValue());
 			}
 		}
-		// apply context from source address or con variable
-		if (context==null || contextUpdated) {
+		// apply base from source address or con variable
+		if (base==null || baseUpdated) {
 			try {
-				setContextFromRequest(request, newContext);
+				setBaseFromRequest(request, newBase);
 			} catch (Exception e) {
 				LOGGER.warn(
-						"Invalid context '{}' from {}:{}: {}",
-						new Object[] { newContext, 
-								request.getSource().getHostAddress(), 
-								request.getSourcePort(), e });
+						"Invalid base '{}' from {}:{}: {}",
+						new Object[] { newBase, 
+								request.getSourceContext().getPeerAddress().getHostString(),
+								request.getSourceContext().getPeerAddress().getPort(), e });
 
 				return false;
 			}
@@ -131,7 +147,7 @@ public class RDNodeResource extends CoapResource {
 		return updateEndpointResources(request.getPayloadString());
 	}
 
-	private void setContextFromRequest(Request request, String newContext) 
+	private void setBaseFromRequest(Request request, String newBase) 
 			throws URISyntaxException {
 		URI check;
 		String scheme, host = null;
@@ -151,9 +167,9 @@ public class RDNodeResource extends CoapResource {
 			request.setScheme(scheme);
 		}
 		
-		if (!newContext.isEmpty()) {
-			// context from URI template variable
-			check = new URI(newContext);
+		if (!newBase.isEmpty()) {
+			// base from URI template variable
+			check = new URI(newBase);
 			// continue checking as "coap:///" is valid a URI.  
 			scheme = check.getScheme();
 			host = check.getHost();
@@ -163,16 +179,16 @@ public class RDNodeResource extends CoapResource {
 			scheme = request.getScheme();
 		}
 		if (host == null) {  // RFC says: use source address when not set
-			host = request.getSource().getHostAddress();
+			host = request.getSourceContext().getPeerAddress().getHostString();
 		}
 		if (port < 0) {  // RFC says: use source port when not set
-			port = request.getSourcePort();
+			port = request.getSourceContext().getPeerAddress().getPort();
 		}
 		
-		// set context from gathered values
+		// set base from gathered values
 		check = new URI(scheme, null, host, port, null, null, null); // required to set port
-		// CoAP context template: coap[s?]://<host>:<port>
-		this.context = check.toString();
+		// CoAP base template: coap[s?]://<host>:<port>
+		this.base = check.toString();
 	}
 
 	/*
@@ -212,7 +228,7 @@ public class RDNodeResource extends CoapResource {
 	@Override
 	public void delete() {
 
-		LOGGER.info("Removing endpoint: "+getContext());
+		LOGGER.info("Removing endpoint: "+getBase());
 		
 		if (ltExpiryFuture!=null) {
 			// delete may be called from within the future
@@ -241,7 +257,7 @@ public class RDNodeResource extends CoapResource {
 			ltExpiryFuture.cancel(true); // try to cancel before delete is called
 		}
 		
-		LOGGER.info("Updating endpoint: "+getContext());
+		LOGGER.info("Updating endpoint: "+getBase());
 		
 		setParameters(exchange.advanced().getRequest());
 		
@@ -317,41 +333,36 @@ public class RDNodeResource extends CoapResource {
 	}
 
 	/*
-	 * the following three methods are used to print the right string to put in
-	 * the payload to respond to the GET request.
+	 * the following two methods put the resources of this node
+	 * in a list of strings in link format. Each string ends with ','.
 	 */
-	public String toLinkFormat(List<String> query) {
-
-		// Create new StringBuilder
-		StringBuilder builder = new StringBuilder();
-		
-		// Build the link format
-		buildLinkFormat(this, builder, query);
-
-		// Remove last delimiter
-		if (builder.length() > 0) {
-			builder.deleteCharAt(builder.length() - 1);
-		}
-
-		return builder.toString();
+	public List<String> toLinkFormat(List<String> query) {
+		// Build the link format recursively
+		return buildLinkFormat(this, query);
 	}
 
-	private void buildLinkFormat(Resource resource, StringBuilder builder, List<String> query) {
+	private List<String> buildLinkFormat(Resource resource, List<String> query) {
+		List<String> resources = new ArrayList<>();
 		if (resource.getChildren().size() > 0) {
 
 			// Loop over all sub-resources
 			for (Resource res : resource.getChildren()) {
+				StringBuilder sb = new StringBuilder();
 				if (LinkFormat.matches(res, query)) {
 					// Convert Resource to string representation
-					builder.append("<"+getContext());
-					builder.append(res.getURI().substring(this.getURI().length()));
-					builder.append(">");
-					builder.append( LinkFormat.serializeResource(res).toString().replaceFirst("<.+>", "") );
+					sb.append("<"+getBase());
+					sb.append(res.getURI().substring(this.getURI().length()));
+					sb.append(">");
+					sb.append(LinkFormat.serializeResource(res).toString().replaceFirst("<.+>", ""));
+				}
+				if (sb.length() != 0) {
+					resources.add(sb.toString());
 				}
 				// Recurse
-				buildLinkFormat(res, builder, query);
+				resources.addAll(buildLinkFormat(res, query));
 			}
 		}
+		return resources;
 	}
 	
 	
@@ -364,24 +375,32 @@ public class RDNodeResource extends CoapResource {
 		return endpointName;
 	}
 
-	public String getDomain() {
-		return domain;
+	public String getSector() {
+		return sector;
 	}
 
-	public String getEndpointType() {
-		return endpointType==null ? "" : endpointType;
+	public Set<String> getEndpointTypes() {
+		return endpointType;
 	}
 
-	public void setEndpointType(String endpointType) {
-		this.endpointType = endpointType;
+	public void addEndpointType(String endpointType) {
+		this.endpointType.add(endpointType);
 	}
 
-	public String getContext() {
-		return context;
+	public String getBase() {
+		return base;
 	}
 
-	public void setContext(String context) {
-		this.context = context;
+	public void setBase(String base) {
+		this.base = base;
+	}
+
+	public HashMap<String, String> getExtraAttrs() {
+		return extraAttrs;
+	}
+
+	public void addExtraAttrs(String name, String value) {
+			this.extraAttrs.put(name, value);
 	}
 	
 	class ExpiryTask extends TimerTask {
