@@ -56,8 +56,6 @@
 		<maven.javadoc.skip>true</maven.javadoc.skip>
 	</properties>
 
-
-
 	<build>
 		<plugins>
 			<plugin>
@@ -88,6 +86,10 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
 	<dependencyManagement>
@@ -104,4 +106,57 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<profiles>
+		<profile>
+			<!--
+				this profile downloads licenses used by 3rd-party library
+			-->
+			<id>download-licenses</id>
+			<activation>
+				<activeByDefault>false</activeByDefault>
+				<property>
+					<name>downloadLicenses</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>license-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>download-licenses</id>
+								<configuration>
+									<excludedGroups>org.eclipse.californium</excludedGroups>
+									<excludedScopes>system,test</excludedScopes>
+								</configuration>
+								<goals>
+									<goal>download-licenses</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>license-maven-plugin</artifactId>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>download-licenses</id>
+								<configuration>
+									<excludedGroups>org.eclipse.californium</excludedGroups>
+									<excludedScopes>system,test</excludedScopes>
+								</configuration>
+								<goals>
+									<goal>aggregate-download-licenses</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>
