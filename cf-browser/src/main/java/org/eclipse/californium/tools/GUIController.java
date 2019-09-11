@@ -43,6 +43,7 @@ import ch.qos.logback.classic.Level;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.CheckMenuItem;
@@ -245,12 +246,14 @@ public class GUIController {
 			for (int i = 1; i < parts.length; i++) {
 				TreeItem search = new TreeItem(parts[i]);
 				ObservableList<TreeItem<String>> children = cur.getChildren();
-				int index = children.indexOf(search);
-				if (index < 0) {
+				FilteredList<TreeItem<String>> filteredChildren =
+					children.filtered(treeItem -> search.getValue().equals(treeItem.getValue()));
+				if(filteredChildren.size() == 0) {
 					children.add(search);
 					cur = search;
-				} else {
-					cur = children.get(index);
+				}
+				else {
+					cur = filteredChildren.get(0);
 				}
 			}
 		}
