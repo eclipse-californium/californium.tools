@@ -132,7 +132,7 @@ public class GUIController {
 
 	@FXML
 	private void deleteRequest() {
-		performRequest(Request.newPost());
+		performRequest(Request.newDelete());
 	}
 
 	@FXML
