@@ -64,6 +64,7 @@ public class GUIController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
 	private static final String DEFAULT_URI = "coap://localhost:5683";
+	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
 
 	/** Combo boxes of coap URIs and resource URIs of discovered servers */
 	@FXML
@@ -104,6 +105,7 @@ public class GUIController {
 	@FXML
 	private void initialize() {
 		uriBox.itemsProperty().get().add(DEFAULT_URI);
+		uriBox.itemsProperty().get().add(SANDBOX_URI);
 		uriBox.getSelectionModel().select(0);
 		// Initialize the
 		InputStream imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/unknown.png");
