@@ -21,12 +21,15 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.URL;
 
+import javax.crypto.SecretKey;
+
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
 import org.eclipse.californium.scandium.dtls.SingleNodeConnectionIdGenerator;
 import org.eclipse.californium.scandium.dtls.pskstore.StringPskStore;
+import org.eclipse.californium.scandium.util.SecretUtil;
 import org.eclipse.californium.scandium.util.ServerNames;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,16 +47,16 @@ public class GUIClientFX extends Application {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIClientFX.class);
 	private static final String PSK_IDENTITY_PREFIX = "cali.";
-	private static final byte[] PSK_SECRET = ".fornium".getBytes();
+	private static final SecretKey PSK_SECRET = SecretUtil.create(".fornium".getBytes(), "PSK");
 
 	public static class PlugPskStore extends StringPskStore {
 
 		private final String identity;
-		private final byte[] secret;
+		private final SecretKey secret;
 
 		public PlugPskStore(String id, byte[] secret) {
 			this.identity = id;
-			this.secret = secret;
+			this.secret = secret == null ? null : SecretUtil.create(secret, "PSK");
 			LOG.info("DTLS-PSK-Identity: {})", identity);
 		}
 
@@ -64,18 +67,18 @@ public class GUIClientFX extends Application {
 		}
 
 		@Override
-		public byte[] getKey(String identity) {
+		public SecretKey getKey(String identity) {
 			if (secret != null) {
-				return secret;
+				return SecretUtil.create(secret);
 			}
 			if (identity.startsWith(PSK_IDENTITY_PREFIX)) {
-				return PSK_SECRET;
+				return SecretUtil.create(PSK_SECRET);
 			}
 			return null;
 		}
 
 		@Override
-		public byte[] getKey(ServerNames serverNames, String identity) {
+		public SecretKey getKey(ServerNames serverNames, String identity) {
 			return getKey(identity);
 		}
 
