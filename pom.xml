@@ -92,6 +92,7 @@
 			</plugin>
 		</plugins>
 	</build>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -106,6 +107,15 @@
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
+
+	<dependencies>
+		<!-- use eclipse snapshots repo to resolve assembly dependency -->
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>californium-assembly</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+	</dependencies>
 
 	<profiles>
 		<profile>
