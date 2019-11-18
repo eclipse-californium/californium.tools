@@ -47,7 +47,7 @@
 	<properties>
 		<!-- 
 			this property prevents the Nexus Staging Maven Plugin to
-			deploy this module's artifacts to Maven Central' staging repo
+			deploy this module's artifacts to Maven Central's staging repo
 		 -->
 		<skipStaging>true</skipStaging>
 		<!-- 
@@ -58,10 +58,6 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-dependency-plugin</artifactId>
@@ -86,71 +82,8 @@
 					</execution>
 				</executions>
 			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-			</plugin>
 		</plugins>
 	</build>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.eclipse.californium</groupId>
-				<artifactId>californium-core</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.eclipse.californium</groupId>
-				<artifactId>scandium</artifactId>
-				<version>${project.version}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
-	<dependencies>
-		<!-- use eclipse snapshots repo to resolve assembly dependency -->
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>californium-assembly</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-	</dependencies>
-
-	<profiles>
-		<profile>
-			<!--
-				this profile downloads licenses used by 3rd-party library
-			-->
-			<id>download-licenses</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-				<property>
-					<name>downloadLicenses</name>
-				</property>
-			</activation>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>license-maven-plugin</artifactId>
-						<executions>
-							<execution>
-								<id>download-licenses</id>
-								<configuration>
-									<excludedGroups>org.eclipse.californium</excludedGroups>
-									<excludedScopes>system,test</excludedScopes>
-								</configuration>
-								<goals>
-									<goal>download-licenses</goal>
-									<goal>aggregate-download-licenses</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
-	</profiles>
 
 </project>
