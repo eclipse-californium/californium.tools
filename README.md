@@ -22,8 +22,10 @@ e.g. run with `java -jar cf-client-*.jar`.
 
 Note: For openjdk, openjfx must be installed separately. That seems to be sometimes broken. If you use openjdk-8 ensure, that openjfx is also a java-8 version. May be this guide helps to fix it [openjfx-8](https://github.com/JabRef/help.jabref.org/issues/204).
 
-> sudo apt install openjfx=8u161-b12-1ubuntu2 libopenjfx-jni=8u161-b12-1ubuntu2 libopenjfx-java=8u161-b12-1ubuntu2
-> sudo apt-mark hold openjfx libopenjfx-jni libopenjfx-java
+```sh
+sudo apt install openjfx=8u161-b12-1ubuntu2 libopenjfx-jni=8u161-b12-1ubuntu2 libopenjfx-java=8u161-b12-1ubuntu2
+sudo apt-mark hold openjfx libopenjfx-jni libopenjfx-java
+```
 
 If your using an other java version or the guide didn't work for you, try an other jdk distributions with jfx.
 
