@@ -14,20 +14,18 @@ These are CoAP tools based on the
 Maven
 -----
 
-Use `mvn clean install` in the root directory to build the tools. It requires at least java 1.8 JDK. The standalone JAR will be created in the ./run/ directory.
-
-The dependencies are available from the default Maven repositories.
+Use `mvn clean install` in the root directory to build the tools. It requires at least a Java 8 SDK. The standalone JARs will be created in the `run` folder.
 
 e.g. run with `java -jar cf-client-*.jar`.
 
-Note: For openjdk, openjfx must be installed separately. That seems to be sometimes broken. If you use openjdk-8 ensure, that openjfx is also a java-8 version. May be this guide helps to fix it [openjfx-8](https://github.com/JabRef/help.jabref.org/issues/204).
 
-```sh
-sudo apt install openjfx=8u161-b12-1ubuntu2 libopenjfx-jni=8u161-b12-1ubuntu2 libopenjfx-java=8u161-b12-1ubuntu2
-sudo apt-mark hold openjfx libopenjfx-jni libopenjfx-java
-```
+Note: Building *cf-browser* using Java 8 requires the JavaFX libraries to be available on the system class path.
+Oracle's JDK includes the JavaFX libraries by default. OpenJDK does not and OpenJFX must be installed separately.
 
-If your using an other java version or the guide didn't work for you, try an other jdk distributions with jfx.
+For instructions regarding the usage of OpenJFX on Java 11 and later, refer to the [OpenJFX documentation](https://openjfx.io/).
+On OpenJDK 8 the availability of OpenJFX depends on the linux distribution you are using. Later versions of Ubunut do no longer seem
+to provide OpenJFX for OpenJDK 8. May be the workaround described in this [GitHub issue](https://github.com/JabRef/help.jabref.org/issues/204)
+works for you.
 
 Eclipse
 -------
