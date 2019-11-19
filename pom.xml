@@ -27,11 +27,17 @@
 			<id>repo.eclipse.org</id>
 			<name>Californium Repository - Releases</name>
 			<url>https://repo.eclipse.org/content/repositories/californium-releases/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 		<repository>
 			<id>eclipse_snapshots</id>
 			<name>Eclipse Snapshots</name>
 			<url>https://repo.eclipse.org/content/repositories/snapshots/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
 		</repository>
 	</repositories>
 
