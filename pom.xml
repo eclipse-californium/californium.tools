@@ -22,13 +22,26 @@
 		<tag>HEAD</tag>
 	</scm>
 
+	<repositories>
+		<repository>
+			<id>repo.eclipse.org</id>
+			<name>Californium Repository - Releases</name>
+			<url>https://repo.eclipse.org/content/repositories/californium-releases/</url>
+		</repository>
+		<repository>
+			<id>eclipse_snapshots</id>
+			<name>Eclipse Snapshots</name>
+			<url>https://repo.eclipse.org/content/repositories/snapshots/</url>
+		</repository>
+	</repositories>
+
 	<modules>
-		<module>cf-client</module>
 		<module>cf-browser</module>
+		<module>cf-client</module>
 		<module>cf-coapbench</module>
-		<module>cf-server</module>
-		<module>cf-rd</module>
 		<module>cf-polyfill</module>
+		<module>cf-rd</module>
+		<module>cf-server</module>
 	</modules>
 
 	<properties>
