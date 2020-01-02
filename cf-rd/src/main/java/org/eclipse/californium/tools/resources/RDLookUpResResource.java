@@ -31,15 +31,15 @@ import org.eclipse.californium.core.server.resources.Resource;
 public class RDLookUpResResource extends CoapResource {
 
 	private RDResource rdResource = null;
-	
+
 	public RDLookUpResResource(String resourceIdentifier, RDResource rd) {
 		super(resourceIdentifier);
 		this.rdResource = rd;
-		getAttributes().addResourceType("core.rd-lookup-ep");
+		getAttributes().addResourceType("core.rd-lookup-res");
 		getAttributes().addContentType(MediaTypeRegistry.APPLICATION_LINK_FORMAT);
 	}
 
-	
+
 	@Override
 	public void handleGET(CoapExchange exchange) {
 		Collection<Resource> resources = rdResource.getChildren();
