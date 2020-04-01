@@ -60,6 +60,8 @@
 			never create JavaDoc for this module
 		 -->
 		<maven.javadoc.skip>true</maven.javadoc.skip>
+		<animal.sniffer.skip>true</animal.sniffer.skip>
+		<revapi.skip>true</revapi.skip>
 	</properties>
 
 	<dependencies>
@@ -94,13 +96,6 @@
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.revapi</groupId>
-				<artifactId>revapi-maven-plugin</artifactId>
-				<configuration>
-					<skip>true</skip>
-				</configuration>
 			</plugin>
 		</plugins>
 	</build>
