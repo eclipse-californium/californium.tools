@@ -23,7 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -36,6 +36,7 @@ import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.elements.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,19 @@ public class GUIController {
 	private static final String DEFAULT_URI = "coap://localhost:5683";
 	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
 
+	private static final List<String> URIS = new ArrayList<>();
+
+	static {
+		URIS.add(DEFAULT_URI);
+		URIS.add(SANDBOX_URI);
+	}
+
+	public static void addURI(String uri) {
+		if (!URIS.contains(uri)) {
+			URIS.add(0, uri);
+		}
+	}
+
 	/** Combo boxes of coap URIs and resource URIs of discovered servers */
 	@FXML
 	private ComboBox<String> uriBox;
@@ -80,10 +94,9 @@ public class GUIController {
 	@FXML
 	private TitledPane responseTitle;
 	@FXML
-	private TreeView resourceTree;
+	private TreeView<String> resourceTree;
 	@FXML
 	private ImageView mediaTypeView;
-	private String selectedURI;
 	private String coapHost;
 
 	public OutputStream getLogStream() {
@@ -104,8 +117,10 @@ public class GUIController {
 
 	@FXML
 	private void initialize() {
-		uriBox.itemsProperty().get().add(DEFAULT_URI);
-		uriBox.itemsProperty().get().add(SANDBOX_URI);
+		ObservableList<String> list = uriBox.itemsProperty().get();
+		for (String uri : URIS) {
+			list.add(uri);
+		}
 		uriBox.getSelectionModel().select(0);
 		// Initialize the
 		InputStream imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/unknown.png");
@@ -115,7 +130,6 @@ public class GUIController {
 
 	@FXML
 	private void uriSelected() {
-		selectedURI = uriBox.getSelectionModel().getSelectedItem();
 	}
 
 	@FXML
@@ -146,7 +160,6 @@ public class GUIController {
 		LOG.info("Begin discovery, host={}", coapHost);
 		request.addMessageObserver(new MessageObserverAdapter() {
 
-			@SuppressWarnings({ "rawtypes", "unchecked" })
 			public void onResponse(Response response) {
 				LOG.info("Discovery, response: {}", response);
 				String text = response.getPayloadString();
@@ -199,7 +212,6 @@ public class GUIController {
 	private void toggleLogging() {
 		Logger logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 		if (ch.qos.logback.classic.Logger.class.isInstance(logger)) {
-			ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) logger;
 			if (logEnabled.isSelected()) {
 				setRootLoggerLevel(Level.DEBUG);
 			} else {
@@ -244,9 +256,9 @@ public class GUIController {
 		TreeItem<String> rootItem = new TreeItem<>("/");
 		for (String res : ress) {
 			String[] parts = res.split("/");
-			TreeItem cur = rootItem;
+			TreeItem<String> cur = rootItem;
 			for (int i = 1; i < parts.length; i++) {
-				TreeItem search = new TreeItem(parts[i]);
+				TreeItem<String> search = new TreeItem<>(parts[i]);
 				ObservableList<TreeItem<String>> children = cur.getChildren();
 				FilteredList<TreeItem<String>> filteredChildren =
 					children.filtered(treeItem -> search.getValue().equals(treeItem.getValue()));
@@ -304,7 +316,7 @@ public class GUIController {
 				int size = response.getPayloadSize();
 				byte[] payload = response.getPayload();
 				CoAP.Type type = response.getType();
-				InetAddress source = response.getSource();
+				InetSocketAddress source = response.getSourceContext().getPeerAddress();
 				OptionSet optionSet = response.getOptions();
 				int format = optionSet.getContentFormat();
 				String mediaType = MediaTypeRegistry.toString(format);
@@ -330,8 +342,9 @@ public class GUIController {
 					mediaTypeView.setImage(unknown);
 					responseArea.setText(response.getPayloadString());
 				}
-				String info = String.format("Response: %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", response.getCode(),
-						response.getCode().name(), size, response.getMID(), source, mediaType);
+				String info = String.format("Response: %s %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", type,
+						response.getCode(), response.getCode().name(), size, response.getMID(),
+						StringUtil.toDisplayString(source), mediaType);
 				responseTitle.setText(info);
 			});
 		}

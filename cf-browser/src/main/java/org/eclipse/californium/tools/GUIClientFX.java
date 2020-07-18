@@ -17,20 +17,15 @@
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
+import java.io.IOException;
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
 import java.net.URL;
 
-import javax.crypto.SecretKey;
-
-import org.eclipse.californium.core.network.CoapEndpoint;
-import org.eclipse.californium.core.network.EndpointManager;
-import org.eclipse.californium.scandium.DTLSConnector;
-import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
-import org.eclipse.californium.scandium.dtls.SingleNodeConnectionIdGenerator;
-import org.eclipse.californium.scandium.dtls.pskstore.StringPskStore;
-import org.eclipse.californium.scandium.util.SecretUtil;
-import org.eclipse.californium.scandium.util.ServerNames;
+import org.eclipse.californium.cli.ClientConfig;
+import org.eclipse.californium.cli.ClientInitializer;
+import org.eclipse.californium.core.network.config.NetworkConfig;
+import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
+import org.eclipse.californium.core.network.config.NetworkConfig.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +34,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import picocli.CommandLine.Command;
 
 /**
  * A JavaFX CoAP Client to communicate with other CoAP resources.
@@ -46,64 +42,43 @@ import javafx.stage.Stage;
 public class GUIClientFX extends Application {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIClientFX.class);
-	private static final String PSK_IDENTITY_PREFIX = "cali.";
-	private static final SecretKey PSK_SECRET = SecretUtil.create(".fornium".getBytes(), "PSK");
 
-	public static class PlugPskStore extends StringPskStore {
+	private static final int DEFAULT_MAX_RESOURCE_SIZE = 8192;
+	private static final int DEFAULT_BLOCK_SIZE = 1024;
 
-		private final String identity;
-		private final SecretKey secret;
-
-		public PlugPskStore(String id, byte[] secret) {
-			this.identity = id;
-			this.secret = secret == null ? null : SecretUtil.create(secret, "PSK");
-			LOG.info("DTLS-PSK-Identity: {})", identity);
-		}
-
-		public PlugPskStore(String id) {
-			identity = PSK_IDENTITY_PREFIX + id;
-			secret = null;
-			LOG.info("DTLS-PSK-Identity: {} ({} random bytes)", identity, (id.length() / 2));
-		}
+	private static NetworkConfigDefaultHandler DEFAULTS = new NetworkConfigDefaultHandler() {
 
 		@Override
-		public SecretKey getKey(String identity) {
-			if (secret != null) {
-				return SecretUtil.create(secret);
-			}
-			if (identity.startsWith(PSK_IDENTITY_PREFIX)) {
-				return SecretUtil.create(PSK_SECRET);
-			}
-			return null;
+		public void applyDefaults(NetworkConfig config) {
+			config.setInt(Keys.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
+			config.setInt(Keys.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);
+			config.setInt(Keys.PREFERRED_BLOCK_SIZE, DEFAULT_BLOCK_SIZE);
+			config.setInt(Keys.MAX_ACTIVE_PEERS, 10);
+			config.setInt(Keys.MAX_PEER_INACTIVITY_PERIOD, 60 * 60 * 24); // 24h
+			config.setInt(Keys.TCP_CONNECTION_IDLE_TIMEOUT, 60 * 60 * 12); // 12h
+			config.setInt(Keys.TCP_CONNECT_TIMEOUT, 20);
+			config.setInt(Keys.TCP_WORKER_THREADS, 2);
 		}
+	};
 
-		@Override
-		public SecretKey getKey(ServerNames serverNames, String identity) {
-			return getKey(identity);
-		}
+	@Command(name = "GUIClientFX", version = "(c) 2016, Institute for Pervasive Computing, ETH Zurich and others.")
+	private static class Config extends ClientConfig {
 
-		@Override
-		public String getIdentityAsString(InetSocketAddress inetAddress) {
-			return identity;
-		}
-
-		@Override
-		public String getIdentityAsString(InetSocketAddress peerAddress, ServerNames virtualHost) {
-			return getIdentityAsString(peerAddress);
-		}
 	}
 
-	public static void main(String[] args) {
-		DtlsConnectorConfig.Builder dtlsBuilder = new DtlsConnectorConfig.Builder();
-		dtlsBuilder.setPskStore(new PlugPskStore("ui"));
-		dtlsBuilder.setConnectionIdGenerator(new SingleNodeConnectionIdGenerator(0));
-		DtlsConnectorConfig config = dtlsBuilder.build();
-		DTLSConnector dtls = new DTLSConnector(config);
-		CoapEndpoint.Builder coapBuilder = new CoapEndpoint.Builder();
-		coapBuilder.setConnector(dtls);
-		CoapEndpoint coapEndpoint = coapBuilder.build();
-		EndpointManager.getEndpointManager().setDefaultEndpoint(coapEndpoint);
-		launch(args);
+	public static void main(String[] args) throws IOException {
+		final Config clientConfig = new Config();
+		clientConfig.networkConfigDefaultHandler = DEFAULTS;
+
+		ClientInitializer.init(args, clientConfig);
+
+		if (clientConfig.helpRequested) {
+			System.exit(0);
+		}
+
+		GUIController.addURI(clientConfig.uri);
+
+		launch();
 	}
 
 	@Override
