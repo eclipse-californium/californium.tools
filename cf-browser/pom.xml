@@ -47,6 +47,46 @@
 		</dependency>
 	</dependencies>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<!-- support tcp, if module library is available -->
+							<Class-Path>cf-cli-tcp-netty-${project.version}.jar</Class-Path>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-installed</id>
+						<phase>install</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<artifactItems>
+								<artifactItem>
+									<groupId>${project.groupId}</groupId>
+									<artifactId>cf-cli-tcp-netty</artifactId>
+									<version>${project.version}</version>
+									<type>${project.packaging}</type>
+								</artifactItem>
+							</artifactItems>
+							<outputDirectory>target</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
 	<profiles>
 		<profile>
 			<id>javafx</id>
@@ -86,7 +126,7 @@
 						<artifactId>javafx-maven-plugin</artifactId>
 						<version>0.0.3</version>
 						<configuration>
-						    <mainClass>${assembly.mainClass}</mainClass>
+							<mainClass>${assembly.mainClass}</mainClass>
 						</configuration>
 					</plugin>
 					<plugin>
