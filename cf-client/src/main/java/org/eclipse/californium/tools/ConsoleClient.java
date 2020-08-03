@@ -35,6 +35,7 @@ import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
 import org.eclipse.californium.core.network.config.NetworkConfig.Keys;
+import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
@@ -186,6 +187,12 @@ public class ConsoleClient {
 		if (ExtendedCode.OBSERVE.equals(clientConfig.extendedMethod)) {
 			request.setObserve();
 			clientConfig.loop = true;
+		}
+		if (clientConfig.proxy != null) {
+			request.setDestinationContext(new AddressEndpointContext(clientConfig.proxy.destination));
+			if (clientConfig.proxy.scheme != null) {
+				request.getOptions().setProxyScheme(clientConfig.proxy.scheme);
+			}
 		}
 		request.setURI(clientConfig.destination);
 		request.setPayload(clientConfig.payloadBytes);

@@ -76,7 +76,7 @@ public class GUIClientFX extends Application {
 			System.exit(0);
 		}
 
-		GUIController.addURI(clientConfig.uri);
+		GUIController.setConfig(clientConfig);
 
 		launch();
 	}

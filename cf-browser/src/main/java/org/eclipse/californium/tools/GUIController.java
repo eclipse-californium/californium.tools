@@ -30,12 +30,14 @@ import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
+import org.eclipse.californium.cli.ClientConfig;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,6 +70,7 @@ public class GUIController {
 	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
 
 	private static final List<String> URIS = new ArrayList<>();
+	private static ClientConfig clientConfig;
 
 	static {
 		URIS.add(DEFAULT_URI);
@@ -78,6 +81,11 @@ public class GUIController {
 		if (!URIS.contains(uri)) {
 			URIS.add(0, uri);
 		}
+	}
+
+	public static void setConfig(ClientConfig config) {
+		clientConfig = config;
+		addURI(config.uri);
 	}
 
 	/** Combo boxes of coap URIs and resource URIs of discovered servers */
@@ -285,6 +293,12 @@ public class GUIController {
 	private void performRequest(Request request) {
 		responseArea.setText("no response yet");
 		responseTitle.setText("Response: none");
+		if (clientConfig.proxy != null) {
+			request.setDestinationContext(new AddressEndpointContext(clientConfig.proxy.destination));
+			if (clientConfig.proxy.scheme != null) {
+				request.getOptions().setProxyScheme(clientConfig.proxy.scheme);
+			}
+		}
 		request.addMessageObserver(new ResponsePrinter());
 		request.setPayload(requestArea.getText());
 		String uri = uriBox.getSelectionModel().getSelectedItem();
