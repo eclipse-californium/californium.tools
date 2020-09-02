@@ -42,6 +42,7 @@
 			<scope>runtime</scope>
 			<excludes>
 				<exclude>org.openjfx:*</exclude>
+				<exclude>org.eclipse.californium:californium-legal</exclude>
 			</excludes>
 			<outputDirectory>/</outputDirectory>
 			<useProjectArtifact>false</useProjectArtifact>
@@ -53,7 +54,7 @@
 			</unpackOptions>
 		</dependencySet>
 		<dependencySet>
-			<scope>provided</scope>
+			<scope>runtime</scope>
 			<includes>
 				<include>org.eclipse.californium:californium-legal</include>
 			</includes>
