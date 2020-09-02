@@ -25,6 +25,7 @@ import org.eclipse.californium.cli.ClientConfig;
 import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
+import org.eclipse.californium.elements.util.StandardCharsets;
 import org.eclipse.californium.core.network.config.NetworkConfig.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,7 @@ public class GUIClientFX extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		URL fxml = getClass().getResource("gui.fxml");
 		FXMLLoader loader = new FXMLLoader(fxml);
+		loader.setCharset(StandardCharsets.UTF_8);
 		Parent root = loader.load();
 		GUIController controller = loader.getController();
 		PrintStream ps = new PrintStream(controller.getLogStream());
