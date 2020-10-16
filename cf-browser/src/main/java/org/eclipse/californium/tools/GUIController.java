@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import org.eclipse.californium.cli.ClientConfig;
@@ -37,7 +39,12 @@ import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.network.Endpoint;
+import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.elements.AddressEndpointContext;
+import org.eclipse.californium.elements.DtlsEndpointContext;
+import org.eclipse.californium.elements.EndpointContext;
+import org.eclipse.californium.elements.MapBasedEndpointContext;
 import org.eclipse.californium.elements.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,6 +105,8 @@ public class GUIController {
 	@FXML
 	private TextArea requestArea;
 	@FXML
+	private TitledPane requestTitle;
+	@FXML
 	private TextArea responseArea;
 	@FXML
 	private TitledPane responseTitle;
@@ -106,6 +115,9 @@ public class GUIController {
 	@FXML
 	private ImageView mediaTypeView;
 	private String coapHost;
+
+	private Image unknown;
+	private Image blank;
 
 	public OutputStream getLogStream() {
 		return new OutputStream() {
@@ -132,8 +144,11 @@ public class GUIController {
 		uriBox.getSelectionModel().select(0);
 		// Initialize the
 		InputStream imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/unknown.png");
-		Image unknown = new Image(imgIS);
+		unknown = new Image(imgIS);
 		mediaTypeView.setImage(unknown);
+
+		imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/blank.png");
+		blank = new Image(imgIS);
 	}
 
 	@FXML
@@ -268,13 +283,12 @@ public class GUIController {
 			for (int i = 1; i < parts.length; i++) {
 				TreeItem<String> search = new TreeItem<>(parts[i]);
 				ObservableList<TreeItem<String>> children = cur.getChildren();
-				FilteredList<TreeItem<String>> filteredChildren =
-					children.filtered(treeItem -> search.getValue().equals(treeItem.getValue()));
-				if(filteredChildren.size() == 0) {
+				FilteredList<TreeItem<String>> filteredChildren = children
+						.filtered(treeItem -> search.getValue().equals(treeItem.getValue()));
+				if (filteredChildren.size() == 0) {
 					children.add(search);
 					cur = search;
-				}
-				else {
+				} else {
 					cur = filteredChildren.get(0);
 				}
 			}
@@ -284,9 +298,9 @@ public class GUIController {
 	}
 
 	/**
-	 * Perform the given request by adding in the resource uri from the uri
-	 * combo box selection, payload from the request text area, and message
-	 * observer to a ResponsePrinter.
+	 * Perform the given request by adding in the resource uri from the uri combo
+	 * box selection, payload from the request text area, and message observer to a
+	 * ResponsePrinter.
 	 * 
 	 * @param request - the coap request type
 	 */
@@ -299,11 +313,11 @@ public class GUIController {
 				request.getOptions().setProxyScheme(clientConfig.proxy.scheme);
 			}
 		}
-		request.addMessageObserver(new ResponsePrinter());
-		request.setPayload(requestArea.getText());
 		String uri = uriBox.getSelectionModel().getSelectedItem();
 		uri = uri.replace(" ", "%20");
 		request.setURI(uri);
+		request.addMessageObserver(new ResponsePrinter(request));
+		request.setPayload(requestArea.getText());
 		execute(request);
 	}
 
@@ -322,6 +336,109 @@ public class GUIController {
 	}
 
 	private class ResponsePrinter extends MessageObserverAdapter {
+		private final AtomicBoolean reconnect = new AtomicBoolean();
+		private final AtomicInteger retransmission = new AtomicInteger();
+		private final Request request;
+		private final String scheme;
+		private final boolean dtls;
+
+		public ResponsePrinter(Request request) {
+			this.request = request;
+			this.scheme = request.getScheme();
+			this.dtls = CoAP.isSecureScheme(scheme) && !CoAP.isTcpScheme(scheme);
+		}
+
+		@Override
+		public void onReadyToSend() {
+			Platform.runLater(() -> {
+				StringBuilder text = new StringBuilder("Request:");
+				try {
+					Endpoint endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
+					text.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
+					InetSocketAddress destination = request.getDestinationContext().getPeerAddress();
+					text.append(" - to ").append(StringUtil.toString(destination));
+				} catch(RuntimeException e) {
+				}
+				requestTitle.setText(text.toString());
+			});
+			super.onReadyToSend();
+		}
+
+		@Override
+		public void onConnecting() {
+			Platform.runLater(() -> {
+				LOG.info("connecting");
+				mediaTypeView.setImage(blank);
+				responseArea.setText("Connecting ...");
+				responseTitle.setText("");
+			});
+			super.onConnecting();
+		}
+
+		@Override
+		public void onRetransmission() {
+			final int retry = retransmission.incrementAndGet();
+			if (dtls && !reconnect.get() && retry == 2) {
+				EndpointContext destinationContext = request.getEffectiveDestinationContext();
+				String mode = destinationContext.get(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
+				if (mode == null) {
+					EndpointContext probeContext = MapBasedEndpointContext.addEntries(destinationContext,
+							DtlsEndpointContext.KEY_HANDSHAKE_MODE, DtlsEndpointContext.HANDSHAKE_MODE_PROBE);
+					request.setEffectiveDestinationContext(probeContext);
+					reconnect.set(true);
+				}
+			} 
+			Platform.runLater(() -> {
+				LOG.info("retransmission");
+				mediaTypeView.setImage(blank);
+				String text = scheme + ": retransmission " + retry;
+				if (reconnect.get()) {
+					text += " (reconnect)";
+				}
+				responseArea.setText(text);
+				responseTitle.setText("");
+			});
+			super.onRetransmission();
+		}
+
+		@Override
+		public void onReject() {
+			Platform.runLater(() -> {
+				LOG.info("rejected");
+				mediaTypeView.setImage(blank);
+				responseArea.setText("Rejected by other peer.");
+				String info = String.format("RST: mid=%d,source=%s", request.getMID(),
+						StringUtil.toDisplayString(request.getDestinationContext().getPeerAddress()));
+				responseTitle.setText(info);
+			});
+			super.onReject();
+		}
+
+		@Override
+		public void onTimeout() {
+			Platform.runLater(() -> {
+				LOG.info("timeout");
+				mediaTypeView.setImage(blank);
+				responseArea.setText("Timeout.");
+				responseTitle.setText("");
+			});
+			super.onTimeout();
+		}
+
+		@Override
+		public void onSendError(final Throwable error) {
+			Platform.runLater(() -> {
+				LOG.info("send error", error);
+				mediaTypeView.setImage(blank);
+				String text = error.getMessage();
+				if (text == null) {
+					text = error.getClass().getSimpleName();
+				}
+				responseArea.setText(text);
+				responseTitle.setText("Send Error");
+			});
+			super.onSendError(error);
+		}
 
 		@Override
 		public void onResponse(final Response response) {
@@ -347,13 +464,14 @@ public class GUIController {
 						responseArea.setText(String.format("%s;size=%d", mediaType, size));
 				} else {
 					// Display media type image icon and payload string
+					Image image = blank;
 					String ext = MediaTypeRegistry.toFileExtension(format);
 					String path = "/org/eclipse/californium/tools/images/" + ext + ".png";
 					InputStream imgIS = getClass().getResourceAsStream(path);
-					if (imgIS == null)
-						imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/blank.png");
-					Image unknown = new Image(imgIS);
-					mediaTypeView.setImage(unknown);
+					if (imgIS != null) {
+						image = new Image(imgIS);
+					}
+					mediaTypeView.setImage(image);
 					responseArea.setText(response.getPayloadString());
 				}
 				String info = String.format("Response: %s %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", type,
@@ -361,6 +479,7 @@ public class GUIController {
 						StringUtil.toDisplayString(source), mediaType);
 				responseTitle.setText(info);
 			});
+			super.onResponse(response);
 		}
 	}
 
