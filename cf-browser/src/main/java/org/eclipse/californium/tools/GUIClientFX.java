@@ -70,18 +70,7 @@ public class GUIClientFX extends Application {
 	}
 
 	public static void main(String[] args) throws IOException {
-		final Config clientConfig = new Config();
-		clientConfig.networkConfigDefaultHandler = DEFAULTS;
-
-		ClientInitializer.init(args, clientConfig);
-
-		if (clientConfig.helpRequested) {
-			System.exit(0);
-		}
-
-		GUIController.setConfig(clientConfig);
-
-		launch();
+		launch(args);
 	}
 
 	@Override
@@ -91,17 +80,26 @@ public class GUIClientFX extends Application {
 
 	@Override
 	public void start(Stage primaryStage) throws Exception {
+		Parameters parameters = getParameters();
+		final Config clientConfig = new Config();
+		clientConfig.networkConfigDefaultHandler = DEFAULTS;
+		ClientInitializer.init(parameters.getRaw().toArray(new String[0]), clientConfig);
+		if (clientConfig.helpRequested) {
+			System.exit(0);
+		}
+
 		URL fxml = getClass().getResource("gui.fxml");
 		FXMLLoader loader = new FXMLLoader(fxml);
 		loader.setCharset(StandardCharsets.UTF_8);
 		Parent root = loader.load();
 		GUIController controller = loader.getController();
+		controller.initialize(primaryStage, clientConfig);
 		PrintStream ps = new PrintStream(controller.getLogStream());
 		System.setOut(ps);
 		System.setErr(ps);
 		LOG.info("MainFX.controller={}", controller);
 		primaryStage.setTitle("CoAP Client");
-		primaryStage.setScene(new Scene(root, 900, 650));
+		primaryStage.setScene(new Scene(root));
 		primaryStage.show();
 	}
 

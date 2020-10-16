@@ -26,8 +26,10 @@ import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
@@ -39,12 +41,15 @@ import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.coap.ClientObserveRelation;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
+import org.eclipse.californium.core.observe.NotificationListener;
 import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.DtlsEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.MapBasedEndpointContext;
+import org.eclipse.californium.elements.util.DaemonThreadFactory;
 import org.eclipse.californium.elements.util.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +61,7 @@ import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.MenuItem;
@@ -65,6 +71,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.Stage;
 
 /**
  * The JavaFX controller for the gui.fxml template TODO: coaps support TODO:
@@ -76,24 +83,10 @@ public class GUIController {
 	private static final String DEFAULT_URI = "coap://localhost:5683";
 	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
 
-	private static final List<String> URIS = new ArrayList<>();
-	private static ClientConfig clientConfig;
+	private final List<String> URIS = new ArrayList<>();
+	private ClientConfig clientConfig;
 
-	static {
-		URIS.add(DEFAULT_URI);
-		URIS.add(SANDBOX_URI);
-	}
-
-	public static void addURI(String uri) {
-		if (!URIS.contains(uri)) {
-			URIS.add(0, uri);
-		}
-	}
-
-	public static void setConfig(ClientConfig config) {
-		clientConfig = config;
-		addURI(config.uri);
-	}
+	private Stage stage;
 
 	/** Combo boxes of coap URIs and resource URIs of discovered servers */
 	@FXML
@@ -107,6 +100,10 @@ public class GUIController {
 	@FXML
 	private TitledPane requestTitle;
 	@FXML
+	private TextArea connectionArea;
+	@FXML
+	private TitledPane connectionTitle;
+	@FXML
 	private TextArea responseArea;
 	@FXML
 	private TitledPane responseTitle;
@@ -114,10 +111,53 @@ public class GUIController {
 	private TreeView<String> resourceTree;
 	@FXML
 	private ImageView mediaTypeView;
+	@FXML
+	private Button getButton;
+	@FXML
+	private Button postButton;
+	@FXML
+	private Button putButton;
+	@FXML
+	private Button deleteButton;
+	@FXML
+	private Button observeButton;
+	@FXML
+	private Button discoverButton;
+
 	private String coapHost;
 
 	private Image unknown;
 	private Image blank;
+
+	private NotificationPrinter notificationPrinter;
+
+	private Endpoint endpoint;
+
+	private ClientObserveRelation observe;
+
+	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Timer#"));
+
+	public GUIController() {
+		URIS.add(DEFAULT_URI);
+		URIS.add(SANDBOX_URI);
+	}
+
+	private boolean addURI(String uri) {
+		if (!URIS.contains(uri)) {
+			URIS.add(0, uri);
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public void initialize(Stage stage, ClientConfig config) {
+		this.stage = stage;
+		this.clientConfig = config;
+		if (addURI(config.uri)) {
+			initializeUriBox();
+		}
+	}
 
 	public OutputStream getLogStream() {
 		return new OutputStream() {
@@ -135,13 +175,18 @@ public class GUIController {
 		};
 	}
 
-	@FXML
-	private void initialize() {
+	private void initializeUriBox() {
 		ObservableList<String> list = uriBox.itemsProperty().get();
+		list.clear();
 		for (String uri : URIS) {
 			list.add(uri);
 		}
 		uriBox.getSelectionModel().select(0);
+	}
+
+	@FXML
+	private void initialize() {
+		initializeUriBox();
 		// Initialize the
 		InputStream imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/unknown.png");
 		unknown = new Image(imgIS);
@@ -149,6 +194,51 @@ public class GUIController {
 
 		imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/blank.png");
 		blank = new Image(imgIS);
+
+		notificationPrinter = new NotificationPrinter();
+
+		resetConnectionTitle();
+	}
+
+	private Endpoint getLocalEndpoint(String uri) {
+		try {
+			String scheme = CoAP.getSchemeFromUri(uri);
+			if (scheme == null) {
+				scheme = uri;
+			}
+			Endpoint endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
+			synchronized (this) {
+				if (this.endpoint != endpoint) {
+					if (this.endpoint != null) {
+						this.endpoint.removeNotificationListener(notificationPrinter);
+					}
+					this.endpoint = endpoint;
+					if (this.endpoint != null) {
+						this.endpoint.addNotificationListener(notificationPrinter);
+					}
+				}
+			}
+			return endpoint;
+		} catch (RuntimeException e) {
+			return null;
+		}
+	}
+
+	private void resetConnectionTitle() {
+		StringBuilder title = new StringBuilder("Connection:");
+		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
+		if (endpoint != null) {
+			title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
+		}
+		connectionTitle.setText(title.toString());
+	}
+
+	private void setButtonsDisable(boolean disable) {
+		getButton.setDisable(disable);
+		postButton.setDisable(disable);
+		putButton.setDisable(disable);
+		deleteButton.setDisable(disable);
+		discoverButton.setDisable(disable);
 	}
 
 	@FXML
@@ -173,6 +263,26 @@ public class GUIController {
 	@FXML
 	private void deleteRequest() {
 		performRequest(Request.newDelete());
+	}
+
+	@FXML
+	private void observeRequest() {
+		if (observe != null) {
+			observe.proactiveCancel();
+			observeButton.setText("OBSERVE");
+			setButtonsDisable(false);
+			observe = null;
+		} else {
+			Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
+			if (endpoint != null) {
+				Request request = Request.newGet();
+				request.getOptions().setObserve(0);
+				observe = new ClientObserveRelation(request, endpoint, timer);
+				observeButton.setText("CANCEL");
+				setButtonsDisable(true);
+				performRequest(request);
+			}
+		}
 	}
 
 	@FXML
@@ -232,6 +342,21 @@ public class GUIController {
 	}
 
 	@FXML
+	private void resetConnection() {
+		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
+		if (endpoint != null) {
+			try {
+				endpoint.stop();
+				endpoint.start();
+				resetConnectionTitle();
+				connectionArea.setText("");
+			} catch (IOException ex) {
+				LOG.error("Restart connection:", ex);
+			}
+		}
+	}
+
+	@FXML
 	private void toggleLogging() {
 		Logger logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 		if (ch.qos.logback.classic.Logger.class.isInstance(logger)) {
@@ -264,6 +389,14 @@ public class GUIController {
 			if (Level.OFF.equals(newLevel)) {
 				clearLog();
 			}
+		}
+	}
+
+	@FXML
+	private void onExit() {
+		Stage stage = this.stage;
+		if (stage != null) {
+			Platform.runLater(stage::close);
 		}
 	}
 
@@ -317,14 +450,27 @@ public class GUIController {
 		uri = uri.replace(" ", "%20");
 		request.setURI(uri);
 		request.addMessageObserver(new ResponsePrinter(request));
-		request.setPayload(requestArea.getText());
+		if (request.isIntendedPayload()) {
+			String text = requestArea.getText();
+			if (!text.isEmpty()) {
+				request.setPayload(text);
+			} else if (clientConfig.payloadBytes != null) {
+				request.setPayload(clientConfig.payloadBytes);
+				if (clientConfig.contentType != null) {
+					request.getOptions().setContentFormat(clientConfig.contentType.contentType);
+				}
+			}
+		}
 		execute(request);
 	}
 
 	private void execute(Request request) {
 		try {
-			request.send();
-			LOG.info("Sent request: {}", request);
+			Endpoint endpoint = getLocalEndpoint(request.getScheme());
+			if (endpoint != null) {
+				request.send(endpoint);
+				LOG.info("Sent request: {}", request);
+			}
 		} catch (Exception ex) {
 			StringBuilder tmp = new StringBuilder(request.toString());
 			tmp.append('\n');
@@ -333,6 +479,44 @@ public class GUIController {
 			tmp.append(sw.toString());
 			LOG.error(tmp.toString());
 		}
+	}
+
+	private void showResponse(Response response) {
+		String type = response.isNotification() ? "Notification" : "Response";
+		LOG.info("Received {}: {}", type, response);
+		int size = response.getPayloadSize();
+		byte[] payload = response.getPayload();
+		InetSocketAddress source = response.getSourceContext().getPeerAddress();
+		OptionSet optionSet = response.getOptions();
+		int format = optionSet.getContentFormat();
+		String mediaType = MediaTypeRegistry.toString(format);
+		if (mediaType.startsWith("image")) {
+			// Display the image
+			Image img = new Image(new ByteArrayInputStream(payload));
+			mediaTypeView.setImage(img);
+			// Display the image uri if given, otherwise just the type
+			// and size
+			String uriPath = optionSet.getUriPathString();
+			if (uriPath != null && uriPath.length() > 0)
+				responseArea.setText(uriPath);
+			else
+				responseArea.setText(String.format("%s;size=%d", mediaType, size));
+		} else {
+			// Display media type image icon and payload string
+			Image image = blank;
+			String ext = MediaTypeRegistry.toFileExtension(format);
+			String path = "/org/eclipse/californium/tools/images/" + ext + ".png";
+			InputStream imgIS = getClass().getResourceAsStream(path);
+			if (imgIS != null) {
+				image = new Image(imgIS);
+			}
+			mediaTypeView.setImage(image);
+			responseArea.setText(response.getPayloadString());
+		}
+		String info = String.format("%s: %s %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", type, response.getType(),
+				response.getCode(), response.getCode().name(), size, response.getMID(),
+				StringUtil.toDisplayString(source), mediaType);
+		responseTitle.setText(info);
 	}
 
 	private class ResponsePrinter extends MessageObserverAdapter {
@@ -352,13 +536,9 @@ public class GUIController {
 		public void onReadyToSend() {
 			Platform.runLater(() -> {
 				StringBuilder text = new StringBuilder("Request:");
-				try {
-					Endpoint endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
-					text.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
-					InetSocketAddress destination = request.getDestinationContext().getPeerAddress();
-					text.append(" - to ").append(StringUtil.toString(destination));
-				} catch(RuntimeException e) {
-				}
+				text.append(" token=").append(request.getTokenString());
+				text.append(", mid=").append(request.getMID());
+				text.append(", ").append(request.getBytes().length).append(" bytes.");
 				requestTitle.setText(text.toString());
 			});
 			super.onReadyToSend();
@@ -369,8 +549,8 @@ public class GUIController {
 			Platform.runLater(() -> {
 				LOG.info("connecting");
 				mediaTypeView.setImage(blank);
-				responseArea.setText("Connecting ...");
-				responseTitle.setText("");
+				resetConnectionTitle();
+				connectionArea.setText("Connecting ...");
 			});
 			super.onConnecting();
 		}
@@ -387,7 +567,7 @@ public class GUIController {
 					request.setEffectiveDestinationContext(probeContext);
 					reconnect.set(true);
 				}
-			} 
+			}
 			Platform.runLater(() -> {
 				LOG.info("retransmission");
 				mediaTypeView.setImage(blank);
@@ -396,7 +576,7 @@ public class GUIController {
 					text += " (reconnect)";
 				}
 				responseArea.setText(text);
-				responseTitle.setText("");
+				responseTitle.setText("Response:");
 			});
 			super.onRetransmission();
 		}
@@ -420,7 +600,7 @@ public class GUIController {
 				LOG.info("timeout");
 				mediaTypeView.setImage(blank);
 				responseArea.setText("Timeout.");
-				responseTitle.setText("");
+				responseTitle.setText("Response:");
 			});
 			super.onTimeout();
 		}
@@ -435,51 +615,52 @@ public class GUIController {
 					text = error.getClass().getSimpleName();
 				}
 				responseArea.setText(text);
-				responseTitle.setText("Send Error");
+				responseTitle.setText("Response: Send Error");
 			});
 			super.onSendError(error);
 		}
 
 		@Override
+		public void onContextEstablished(EndpointContext endpointContext) {
+			Platform.runLater(() -> {
+				StringBuilder title = new StringBuilder("Connection:");
+				StringBuilder area = new StringBuilder();
+				Endpoint endpoint = getLocalEndpoint(scheme);
+				if (endpoint != null) {
+					title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
+					title.append(" - to ").append(StringUtil.toString(endpointContext.getPeerAddress()));
+					area.append("PEER: ").append(endpointContext.getPeerIdentity()).append(StringUtil.lineSeparator());
+					for (Map.Entry<String, String> entry : endpointContext.entries().entrySet()) {
+						area.append(entry.getKey()).append(": ").append(entry.getValue())
+								.append(StringUtil.lineSeparator());
+					}
+				}
+				connectionTitle.setText(title.toString());
+				connectionArea.setText(area.toString());
+			});
+			super.onReadyToSend();
+		}
+
+		@Override
 		public void onResponse(final Response response) {
 			Platform.runLater(() -> {
-				LOG.info("Received response: {}", response);
-				int size = response.getPayloadSize();
-				byte[] payload = response.getPayload();
-				CoAP.Type type = response.getType();
-				InetSocketAddress source = response.getSourceContext().getPeerAddress();
-				OptionSet optionSet = response.getOptions();
-				int format = optionSet.getContentFormat();
-				String mediaType = MediaTypeRegistry.toString(format);
-				if (mediaType.startsWith("image")) {
-					// Display the image
-					Image img = new Image(new ByteArrayInputStream(payload));
-					mediaTypeView.setImage(img);
-					// Display the image uri if given, otherwise just the type
-					// and size
-					String uriPath = optionSet.getUriPathString();
-					if (uriPath != null && uriPath.length() > 0)
-						responseArea.setText(uriPath);
-					else
-						responseArea.setText(String.format("%s;size=%d", mediaType, size));
-				} else {
-					// Display media type image icon and payload string
-					Image image = blank;
-					String ext = MediaTypeRegistry.toFileExtension(format);
-					String path = "/org/eclipse/californium/tools/images/" + ext + ".png";
-					InputStream imgIS = getClass().getResourceAsStream(path);
-					if (imgIS != null) {
-						image = new Image(imgIS);
-					}
-					mediaTypeView.setImage(image);
-					responseArea.setText(response.getPayloadString());
-				}
-				String info = String.format("Response: %s %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", type,
-						response.getCode(), response.getCode().name(), size, response.getMID(),
-						StringUtil.toDisplayString(source), mediaType);
-				responseTitle.setText(info);
+				showResponse(response);
 			});
 			super.onResponse(response);
+		}
+	}
+
+	private class NotificationPrinter implements NotificationListener {
+
+		@Override
+		public void onNotification(final Request request, final Response response) {
+			Platform.runLater(() -> {
+				if (observe != null && observe.matchRequest(request)) {
+					if (observe.onResponse(response)) {
+						showResponse(response);
+					}
+				}
+			});
 		}
 	}
 
