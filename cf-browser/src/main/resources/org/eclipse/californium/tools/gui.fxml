@@ -14,6 +14,18 @@
 	prefWidth="900.0" xmlns="http://javafx.com/javafx/8"
 	xmlns:fx="http://javafx.com/fxml/1"
 	fx:controller="org.eclipse.californium.tools.GUIController">
+	<fx:define>
+		<ToggleGroup fx:id="logLevelGroup" />
+	</fx:define>
+	<fx:define>
+		<ToggleGroup fx:id="contentTypeGroup" />
+	</fx:define>
+	<fx:define>
+		<ToggleGroup fx:id="acceptGroup" />
+	</fx:define>
+	<fx:define>
+		<ToggleGroup fx:id="messageTypeGroup" />
+	</fx:define>
 	<top>
 		<MenuBar prefHeight="31.0" prefWidth="585.0"
 			BorderPane.alignment="CENTER">
@@ -30,6 +42,36 @@
 							onAction="#resetConnection" text="Reset" />
 					</items>
 				</Menu>
+				<Menu mnemonicParsing="false" text="CoAP Details">
+					<items>
+						<Menu mnemonicParsing="false" text="Message Type">
+							<items>
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setMessageType" text="NON"
+									toggleGroup="$messageTypeGroup" />
+								<RadioMenuItem mnemonicParsing="false"
+									selected="true" onAction="#setMessageType" text="CON"
+									toggleGroup="$messageTypeGroup" />
+							</items>
+						</Menu>
+						<Menu mnemonicParsing="false" fx:id="contentTypeMenu"
+							text="Content">
+							<items>
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setContentType" text="dummy"
+									toggleGroup="$contentTypeGroup" />
+							</items>
+						</Menu>
+						<Menu mnemonicParsing="false" fx:id="acceptMenu"
+							text="Accept">
+							<items>
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setAcceptType" text="dummy"
+									toggleGroup="$acceptGroup" />
+							</items>
+						</Menu>
+					</items>
+				</Menu>
 				<Menu mnemonicParsing="false" text="Log">
 					<items>
 						<CheckMenuItem fx:id="logEnabled"
@@ -37,20 +79,26 @@
 							text="Enable" />
 						<MenuItem mnemonicParsing="false" onAction="#clearLog"
 							text="Clear log" />
-						<Menu mnemonicParsing="false" text="Level">
+						<Menu mnemonicParsing="false" fx:id="logLevelMenu"
+							text="Level">
 							<items>
-								<MenuItem mnemonicParsing="false"
-									onAction="#setLogLevel" text="ERROR" />
-								<MenuItem mnemonicParsing="false"
-									onAction="#setLogLevel" text="WARN" />
-								<MenuItem mnemonicParsing="false"
-									onAction="#setLogLevel" text="INFO" />
-								<MenuItem mnemonicParsing="false"
-									onAction="#setLogLevel" text="DEBUG" />
-								<MenuItem mnemonicParsing="false"
-									onAction="#setLogLevel" text="TRACE" />
-								<MenuItem mnemonicParsing="false"
-									onAction="#setLogLevel" text="ALL" />
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setLogLevel" text="ERROR"
+									toggleGroup="$logLevelGroup" />
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setLogLevel" text="WARN"
+									toggleGroup="$logLevelGroup" />
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setLogLevel" text="INFO"
+									toggleGroup="$logLevelGroup" />
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setLogLevel" text="DEBUG"
+									toggleGroup="$logLevelGroup" />
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setLogLevel" text="TRACE"
+									toggleGroup="$logLevelGroup" />
+								<RadioMenuItem mnemonicParsing="false"
+									onAction="#setLogLevel" text="ALL" toggleGroup="$logLevelGroup" />
 							</items>
 						</Menu>
 					</items>
