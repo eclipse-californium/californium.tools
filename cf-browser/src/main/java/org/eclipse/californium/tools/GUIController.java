@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.eclipse.californium.cli.ClientConfig;
+import org.eclipse.californium.cli.ClientBaseConfig;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.MessageObserverAdapter;
@@ -60,13 +60,17 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
@@ -84,7 +88,7 @@ public class GUIController {
 	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
 
 	private final List<String> URIS = new ArrayList<>();
-	private ClientConfig clientConfig;
+	private ClientBaseConfig clientConfig;
 
 	private Stage stage;
 
@@ -95,6 +99,12 @@ public class GUIController {
 	private TextArea logArea;
 	@FXML
 	private CheckMenuItem logEnabled;
+	@FXML
+	private Menu contentTypeMenu;
+	@FXML
+	private Menu acceptMenu;
+	@FXML
+	private Menu logLevelMenu;
 	@FXML
 	private TextArea requestArea;
 	@FXML
@@ -125,6 +135,9 @@ public class GUIController {
 	private Button discoverButton;
 
 	private String coapHost;
+	private int accept = MediaTypeRegistry.TEXT_PLAIN;
+	private int contentType = MediaTypeRegistry.TEXT_PLAIN;
+	private boolean confirmed = true;
 
 	private Image unknown;
 	private Image blank;
@@ -151,7 +164,7 @@ public class GUIController {
 		}
 	}
 
-	public void initialize(Stage stage, ClientConfig config) {
+	public void initialize(Stage stage, ClientBaseConfig config) {
 		this.stage = stage;
 		this.clientConfig = config;
 		if (addURI(config.uri)) {
@@ -175,6 +188,40 @@ public class GUIController {
 		};
 	}
 
+	private void initializeContentTypeMenu(Menu menu) {
+		ObservableList<MenuItem> items = menu.getItems();
+		if (items.size() == 1) {
+			MenuItem example = items.get(0);
+			EventHandler<ActionEvent> onAction = example.getOnAction();
+			ToggleGroup group = null;
+			if (example instanceof RadioMenuItem) {
+				RadioMenuItem radio = (RadioMenuItem) example;
+				group = radio.getToggleGroup();
+				radio.setSelected(true);
+			}
+			List<Integer> allMediaTypes = new ArrayList<Integer>(MediaTypeRegistry.getAllMediaTypes());
+			allMediaTypes.sort(null);
+			for (int type : allMediaTypes) {
+				String name = MediaTypeRegistry.toString(type);
+				if (example != null) {
+					example.setText(name);
+					example = null;
+				} else {
+					MenuItem item;
+					if (group != null) {
+						RadioMenuItem radio = new RadioMenuItem(name);
+						radio.setToggleGroup(group);
+						item = radio;
+					} else {
+						item = new MenuItem(name);
+					}
+					item.setOnAction(onAction);
+					items.add(item);
+				}
+			}
+		}
+	}
+
 	private void initializeUriBox() {
 		ObservableList<String> list = uriBox.itemsProperty().get();
 		list.clear();
@@ -196,7 +243,9 @@ public class GUIController {
 		blank = new Image(imgIS);
 
 		notificationPrinter = new NotificationPrinter();
-
+		initializeRootLoggerLevel();
+		initializeContentTypeMenu(contentTypeMenu);
+		initializeContentTypeMenu(acceptMenu);
 		resetConnectionTitle();
 	}
 
@@ -381,6 +430,23 @@ public class GUIController {
 		setRootLoggerLevel(level);
 	}
 
+	private void initializeRootLoggerLevel() {
+		Logger logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+		if (ch.qos.logback.classic.Logger.class.isInstance(logger)) {
+			ch.qos.logback.classic.Logger rootLogger = (ch.qos.logback.classic.Logger) logger;
+			Level level = rootLogger.getEffectiveLevel();
+			for (MenuItem logItem : logLevelMenu.getItems()) {
+				Level itemLevel = Level.toLevel(logItem.getText());
+				if (level.equals(itemLevel)) {
+					if (logItem instanceof RadioMenuItem) {
+						((RadioMenuItem) logItem).setSelected(true);
+					}
+					break;
+				}
+			}
+		}
+	}
+
 	private void setRootLoggerLevel(Level newLevel) {
 		Logger logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 		if (ch.qos.logback.classic.Logger.class.isInstance(logger)) {
@@ -390,6 +456,26 @@ public class GUIController {
 				clearLog();
 			}
 		}
+	}
+
+	@FXML
+	private void setMessageType(ActionEvent event) {
+		MenuItem item = (MenuItem) event.getSource();
+		confirmed = item.getText().equals("CON");
+	}
+
+	@FXML
+	private void setContentType(ActionEvent event) {
+		MenuItem item = (MenuItem) event.getSource();
+		String text = item.getText();
+		contentType = MediaTypeRegistry.parse(text);
+	}
+
+	@FXML
+	private void setAcceptType(ActionEvent event) {
+		MenuItem item = (MenuItem) event.getSource();
+		String text = item.getText();
+		accept = MediaTypeRegistry.parse(text);
 	}
 
 	@FXML
@@ -454,13 +540,15 @@ public class GUIController {
 			String text = requestArea.getText();
 			if (!text.isEmpty()) {
 				request.setPayload(text);
-			} else if (clientConfig.payloadBytes != null) {
-				request.setPayload(clientConfig.payloadBytes);
-				if (clientConfig.contentType != null) {
-					request.getOptions().setContentFormat(clientConfig.contentType.contentType);
-				}
+			}
+			if (contentType != MediaTypeRegistry.UNDEFINED) {
+				request.getOptions().setContentFormat(contentType);
 			}
 		}
+		if (accept != MediaTypeRegistry.UNDEFINED) {
+			request.getOptions().setAccept(accept);
+		}
+		request.setConfirmable(confirmed);
 		execute(request);
 	}
 

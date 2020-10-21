@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
 
-import org.eclipse.californium.cli.ClientConfig;
+import org.eclipse.californium.cli.ClientBaseConfig;
 import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
@@ -65,7 +65,7 @@ public class GUIClientFX extends Application {
 	};
 
 	@Command(name = "GUIClientFX", version = "(c) 2016, Institute for Pervasive Computing, ETH Zurich and others.")
-	private static class Config extends ClientConfig {
+	private static class Config extends ClientBaseConfig {
 
 	}
 
