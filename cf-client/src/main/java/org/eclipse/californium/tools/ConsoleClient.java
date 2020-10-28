@@ -183,7 +183,10 @@ public class ConsoleClient {
 	private static CountDownLatch request(final Config clientConfig) {
 		final CountDownLatch ready = new CountDownLatch(1);
 		// create request according to specified method
-		Type type = Boolean.FALSE.equals(clientConfig.con) ? Type.NON : Type.CON;
+		Type type = Type.CON;
+		if (clientConfig.messageType != null && clientConfig.messageType.non) {
+			type = Type.NON;
+		}
 		final Request request = new Request(clientConfig.method, type);
 		if (ExtendedCode.OBSERVE.equals(clientConfig.extendedMethod)) {
 			request.setObserve();
