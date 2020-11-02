@@ -23,9 +23,10 @@ Note: Building *cf-browser* using Java 8 requires the JavaFX libraries to be ava
 Oracle's JDK includes the JavaFX libraries by default. OpenJDK does not and OpenJFX must be installed separately.
 
 For instructions regarding the usage of OpenJFX on Java 11 and later, refer to the [OpenJFX documentation](https://openjfx.io/).
-On OpenJDK 8 the availability of OpenJFX depends on the linux distribution you are using. Later versions of Ubunut do no longer seem
-to provide OpenJFX for OpenJDK 8. May be the workaround described in this [GitHub issue](https://github.com/JabRef/help.jabref.org/issues/204)
+On OpenJDK 8 the availability of OpenJFX depends on the linux distribution you are using. Later versions of Ubuntu seems to not longer provide OpenJFX for OpenJDK 8. Maybe the workaround described in this [GitHub issue](https://github.com/JabRef/help.jabref.org/issues/204)
 works for you.
+
+[cf-browser - README](cf-browser/README.md)
 
 Eclipse
 -------
