@@ -4,8 +4,8 @@ Californium (Cf) Tools
 These are CoAP tools based on the
 [Californium (Cf)](https://github.com/eclipse/californium) CoAP framework.
 
-* cf-browser - javaFx GUI based coap client
-* cf-client - cli based coap client
+* [cf-browser](cf-browser/README.md) - javaFx GUI based coap client
+* [cf-client](cf-client/README.md) - cli based coap client
 * cf-coapbench - benchmark (currently not maintained/tested, use californium/demo-apps/cf-extplugtest-client instead).
 * cf-polyfill - WebServer emits coap requests (currently not maintained/tested)
 * cf-rd - coap resource directory
