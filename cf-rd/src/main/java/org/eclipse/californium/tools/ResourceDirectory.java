@@ -21,7 +21,7 @@ import java.net.InetSocketAddress;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.network.CoapEndpoint;
-import org.eclipse.californium.core.network.EndpointManager;
+import org.eclipse.californium.elements.util.NetworkInterfacesUtil;
 import org.eclipse.californium.tools.resources.RDLookUpTopResource;
 import org.eclipse.californium.tools.resources.RDResource;
 import org.eclipse.californium.tools.resources.RDTagTopResource;
@@ -42,7 +42,7 @@ public class ResourceDirectory extends CoapServer {
 
 		// explicitly bind to each address to avoid the wildcard address reply problem
 		// (default interface address instead of original destination)
-		for (InetAddress addr : EndpointManager.getEndpointManager().getNetworkInterfaces()) {
+		for (InetAddress addr : NetworkInterfacesUtil.getNetworkInterfaces()) {
 			if (!addr.isLinkLocalAddress()) {
 				CoapEndpoint.Builder builder = new CoapEndpoint.Builder();
 				builder.setInetSocketAddress(new InetSocketAddress(addr, CoAP.DEFAULT_COAP_PORT));

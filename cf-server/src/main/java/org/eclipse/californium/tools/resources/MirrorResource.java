@@ -15,6 +15,8 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import java.net.InetSocketAddress;
+
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
@@ -44,10 +46,11 @@ public class MirrorResource extends CoapResource {
 	@Override
 	public void handleRequest(Exchange exchange) {
 		Request request = exchange.getRequest();
+		InetSocketAddress source = request.getSourceContext().getPeerAddress();
 		StringBuilder buffer = new StringBuilder();
 		buffer.append("resource ").append(getURI()).append(" received request")
 			.append("\n").append("Code: ").append(request.getCode())
-			.append("\n").append("Source: ").append(request.getSource()).append(":").append(request.getSourcePort())
+			.append("\n").append("Source: ").append(source.getAddress()).append(":").append(source.getPort())
 			.append("\n").append("Type: ").append(request.getType())
 			.append("\n").append("MID: ").append(request.getMID())
 			.append("\n").append("Token: ").append(request.getTokenString())
