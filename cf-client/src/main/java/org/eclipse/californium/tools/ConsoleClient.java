@@ -199,7 +199,9 @@ public class ConsoleClient {
 			}
 		}
 		request.setURI(clientConfig.destination);
-		request.setPayload(clientConfig.payloadBytes);
+		if (clientConfig.payload != null) {
+			request.setPayload(clientConfig.payload.payloadBytes);
+		}
 		if (clientConfig.contentType != null) {
 			request.getOptions().setContentFormat(clientConfig.contentType.contentType);
 		}
