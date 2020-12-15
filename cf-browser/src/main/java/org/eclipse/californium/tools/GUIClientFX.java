@@ -22,7 +22,11 @@ import java.io.PrintStream;
 import java.net.URL;
 
 import org.eclipse.californium.cli.ClientBaseConfig;
+import org.eclipse.californium.cli.ClientConfig;
 import org.eclipse.californium.cli.ClientInitializer;
+import org.eclipse.californium.cli.ClientConfig.ContentType;
+import org.eclipse.californium.cli.ClientConfig.MessageType;
+import org.eclipse.californium.cli.ClientConfig.Payload;
 import org.eclipse.californium.core.network.config.NetworkConfig;
 import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
 import org.eclipse.californium.elements.util.StandardCharsets;
@@ -35,7 +39,10 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import picocli.CommandLine;
+import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 
 /**
  * A JavaFX CoAP Client to communicate with other CoAP resources.
@@ -65,7 +72,50 @@ public class GUIClientFX extends Application {
 	};
 
 	@Command(name = "GUIClientFX", version = "(c) 2016, Institute for Pervasive Computing, ETH Zurich and others.")
-	private static class Config extends ClientBaseConfig {
+	public static class GuiClientConfig extends ClientBaseConfig {
+
+		/**
+		 * Content type.
+		 */
+		@ArgGroup(exclusive = true)
+		public ContentType contentType;
+
+		/**
+		 * Payload.
+		 */
+		@ArgGroup(exclusive = true)
+		public Payload payload;
+
+		/**
+		 * Apply {@link String#format(String, Object...)} to payload. The used
+		 * parameter depends on the client implementation.
+		 */
+		@Option(names = "--payload-format", description = "apply format to payload.")
+		public boolean payloadFormat;
+
+		/**
+		 * Message type.
+		 */
+		@ArgGroup(exclusive = true)
+		public MessageType messageType;
+
+		@Override
+		public void register(CommandLine cmd) {
+			super.register(cmd);
+			cmd.setNegatableOptionTransformer(ClientConfig.messageTypeTransformer);
+		}
+
+		@Override
+		public void defaults() {
+			super.defaults();
+			if (contentType != null) {
+				contentType.defaults();
+			}
+			if (payload != null) {
+				int max = networkConfig.getInt(Keys.MAX_RESOURCE_BODY_SIZE);
+				payload.defaults(max);
+			}
+		}
 
 	}
 
@@ -81,7 +131,7 @@ public class GUIClientFX extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
 		Parameters parameters = getParameters();
-		final Config clientConfig = new Config();
+		final GuiClientConfig clientConfig = new GuiClientConfig();
 		clientConfig.networkConfigDefaultHandler = DEFAULTS;
 		ClientInitializer.init(parameters.getRaw().toArray(new String[0]), clientConfig);
 		if (clientConfig.helpRequested) {

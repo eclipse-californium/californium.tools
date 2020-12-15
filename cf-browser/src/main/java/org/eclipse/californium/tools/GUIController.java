@@ -27,6 +27,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -34,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import org.eclipse.californium.cli.ClientBaseConfig;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.MessageObserverAdapter;
@@ -51,6 +51,7 @@ import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.MapBasedEndpointContext;
 import org.eclipse.californium.elements.util.DaemonThreadFactory;
 import org.eclipse.californium.elements.util.StringUtil;
+import org.eclipse.californium.tools.GUIClientFX.GuiClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,8 +79,7 @@ import javafx.scene.image.ImageView;
 import javafx.stage.Stage;
 
 /**
- * The JavaFX controller for the gui.fxml template TODO: coaps support TODO:
- * better display of different media types
+ * The JavaFX controller for the gui.fxml template
  */
 public class GUIController {
 
@@ -88,7 +88,7 @@ public class GUIController {
 	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
 
 	private final List<String> URIS = new ArrayList<>();
-	private ClientBaseConfig clientConfig;
+	private GuiClientConfig clientConfig;
 
 	private Stage stage;
 
@@ -150,6 +150,10 @@ public class GUIController {
 
 	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Timer#"));
 
+	private Random random = new Random();
+
+	private String requestText;
+
 	public GUIController() {
 		URIS.add(DEFAULT_URI);
 		URIS.add(SANDBOX_URI);
@@ -164,11 +168,34 @@ public class GUIController {
 		}
 	}
 
-	public void initialize(Stage stage, ClientBaseConfig config) {
+	private void applyRequestContent() {
+		if (requestText == null || requestText.equals(requestArea.getText())) {
+			if (clientConfig.payload != null) {
+				String text = clientConfig.payload.text;
+				if (text == null) {
+					text = new String(clientConfig.payload.payloadBytes, CoAP.UTF8_CHARSET);
+				}
+				if (clientConfig.payloadFormat) {
+					text = String.format(text, random.nextInt(100), System.currentTimeMillis() / 1000);
+				}
+				requestText = text;
+				requestArea.setText(text);
+			}
+		}
+	}
+
+	public void initialize(Stage stage, GuiClientConfig config) {
 		this.stage = stage;
 		this.clientConfig = config;
 		if (addURI(config.uri)) {
 			initializeUriBox();
+		}
+		applyRequestContent();
+		if (config.contentType != null) {
+			selectContentTypeMenu(contentTypeMenu, config.contentType.contentType);
+			contentType = config.contentType.contentType;
+			selectContentTypeMenu(acceptMenu, config.contentType.contentType);
+			accept = config.contentType.contentType;
 		}
 	}
 
@@ -186,6 +213,18 @@ public class GUIController {
 				Platform.runLater(() -> logArea.appendText(line));
 			}
 		};
+	}
+
+	private void selectContentTypeMenu(Menu menu, int contentType) {
+		String name = MediaTypeRegistry.toString(contentType);
+		for (MenuItem item : menu.getItems()) {
+			if (name.equals(item.getText())) {
+				if (item instanceof RadioMenuItem) {
+					((RadioMenuItem) item).setSelected(true);
+					break;
+				}
+			}
+		}
 	}
 
 	private void initializeContentTypeMenu(Menu menu) {
@@ -537,6 +576,7 @@ public class GUIController {
 		request.setURI(uri);
 		request.addMessageObserver(new ResponsePrinter(request));
 		if (request.isIntendedPayload()) {
+			applyRequestContent();
 			String text = requestArea.getText();
 			if (!text.isEmpty()) {
 				request.setPayload(text);
@@ -716,7 +756,8 @@ public class GUIController {
 				Endpoint endpoint = getLocalEndpoint(scheme);
 				if (endpoint != null) {
 					title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
-					title.append(" - to ").append(StringUtil.toString(endpointContext.getPeerAddress()));
+					title.append(" - to ").append(endpointContext.getPeerAddress());
+					area.append("DESTINATION: ").append(endpointContext.getPeerAddress()).append(StringUtil.lineSeparator());
 					area.append("PEER: ").append(endpointContext.getPeerIdentity()).append(StringUtil.lineSeparator());
 					for (Map.Entry<String, Object> entry : endpointContext.entries().entrySet()) {
 						area.append(entry.getKey()).append(": ").append(entry.getValue())
