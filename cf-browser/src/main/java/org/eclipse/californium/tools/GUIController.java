@@ -648,7 +648,7 @@ public class GUIController {
 			final int retry = retransmission.incrementAndGet();
 			if (dtls && !reconnect.get() && retry == 2) {
 				EndpointContext destinationContext = request.getEffectiveDestinationContext();
-				String mode = destinationContext.get(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
+				String mode = destinationContext.getString(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
 				if (mode == null) {
 					EndpointContext probeContext = MapBasedEndpointContext.addEntries(destinationContext,
 							DtlsEndpointContext.KEY_HANDSHAKE_MODE, DtlsEndpointContext.HANDSHAKE_MODE_PROBE);
@@ -718,7 +718,7 @@ public class GUIController {
 					title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
 					title.append(" - to ").append(StringUtil.toString(endpointContext.getPeerAddress()));
 					area.append("PEER: ").append(endpointContext.getPeerIdentity()).append(StringUtil.lineSeparator());
-					for (Map.Entry<String, String> entry : endpointContext.entries().entrySet()) {
+					for (Map.Entry<String, Object> entry : endpointContext.entries().entrySet()) {
 						area.append(entry.getKey()).append(": ").append(entry.getValue())
 								.append(StringUtil.lineSeparator());
 					}
