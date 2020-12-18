@@ -24,7 +24,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -85,7 +87,8 @@ public class GUIController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
 	private static final String DEFAULT_URI = "coap://localhost:5683";
-	private static final String SANDBOX_URI = "coap://californium.eclipse.org:5683";
+	private static final String SANDBOX_URI = "coap://californium.eclipseprojects.io";
+	private static final String SANDBOX_SECURE_URI = "coaps://californium.eclipseprojects.io";
 
 	private final List<String> URIS = new ArrayList<>();
 	private GuiClientConfig clientConfig;
@@ -157,6 +160,7 @@ public class GUIController {
 	public GUIController() {
 		URIS.add(DEFAULT_URI);
 		URIS.add(SANDBOX_URI);
+		URIS.add(SANDBOX_SECURE_URI);
 	}
 
 	private boolean addURI(String uri) {
@@ -379,7 +383,7 @@ public class GUIController {
 		coapHost = getHost();
 		request.setURI(coapHost + "/.well-known/core");
 		LOG.info("Begin discovery, host={}", coapHost);
-		request.addMessageObserver(new MessageObserverAdapter() {
+		request.addMessageObserver(new ResponsePrinter(request) {
 
 			public void onResponse(Response response) {
 				LOG.info("Discovery, response: {}", response);
@@ -647,7 +651,10 @@ public class GUIController {
 		responseTitle.setText(info);
 	}
 
+	private static final SimpleDateFormat FORMAT = new SimpleDateFormat("MMM d. HH:mm:ss [SSS]");
+
 	private class ResponsePrinter extends MessageObserverAdapter {
+		private final AtomicBoolean connect = new AtomicBoolean();
 		private final AtomicBoolean reconnect = new AtomicBoolean();
 		private final AtomicInteger retransmission = new AtomicInteger();
 		private final Request request;
@@ -674,6 +681,7 @@ public class GUIController {
 
 		@Override
 		public void onConnecting() {
+			connect.set(true);
 			Platform.runLater(() -> {
 				LOG.info("connecting");
 				mediaTypeView.setImage(blank);
@@ -686,7 +694,7 @@ public class GUIController {
 		@Override
 		public void onRetransmission() {
 			final int retry = retransmission.incrementAndGet();
-			if (dtls && !reconnect.get() && retry == 2) {
+			if (dtls && !connect.get() && !reconnect.get() && retry == 2) {
 				EndpointContext destinationContext = request.getEffectiveDestinationContext();
 				String mode = destinationContext.getString(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
 				if (mode == null) {
@@ -750,24 +758,26 @@ public class GUIController {
 
 		@Override
 		public void onContextEstablished(EndpointContext endpointContext) {
-			Platform.runLater(() -> {
-				StringBuilder title = new StringBuilder("Connection:");
-				StringBuilder area = new StringBuilder();
-				Endpoint endpoint = getLocalEndpoint(scheme);
-				if (endpoint != null) {
-					title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
-					title.append(" - to ").append(endpointContext.getPeerAddress());
-					area.append("DESTINATION: ").append(endpointContext.getPeerAddress()).append(StringUtil.lineSeparator());
-					area.append("PEER: ").append(endpointContext.getPeerIdentity()).append(StringUtil.lineSeparator());
-					for (Map.Entry<String, Object> entry : endpointContext.entries().entrySet()) {
-						area.append(entry.getKey()).append(": ").append(entry.getValue())
-								.append(StringUtil.lineSeparator());
+			if (connect.get()) {
+				Platform.runLater(() -> {
+					StringBuilder title = new StringBuilder("Connection:");
+					StringBuilder area = new StringBuilder();
+					Endpoint endpoint = getLocalEndpoint(scheme);
+					if (endpoint != null) {
+						title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
+						title.append(" - to ").append(endpointContext.getPeerAddress());
+						area.append(FORMAT.format(new Date())).append(StringUtil.lineSeparator());
+						area.append("PEER: ").append(endpointContext.getPeerIdentity()).append(StringUtil.lineSeparator());
+						for (Map.Entry<String, Object> entry : endpointContext.entries().entrySet()) {
+							area.append(entry.getKey()).append(": ").append(entry.getValue())
+									.append(StringUtil.lineSeparator());
+						}
 					}
-				}
-				connectionTitle.setText(title.toString());
-				connectionArea.setText(area.toString());
-			});
-			super.onReadyToSend();
+					connectionTitle.setText(title.toString());
+					connectionArea.setText(area.toString());
+				});
+			}
+			super.onContextEstablished(endpointContext);
 		}
 
 		@Override

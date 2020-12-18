@@ -2,6 +2,8 @@
 
 A JavaFX application that uses the Californium libraries to act as `coap-client` to discover and interact with `coap-servers`.
 
+![Screenshot](Screenshot.png)
+
 ## Prerequisite
 
 Unfortunately `javaFX` was only a short time part of the java-JRE/JDK releases, mainly for oracle's java 1.7 and java 1.8. For openjdk's and since java 11 it's required to be installed as separate SDK, specific to the java-JRE/JDK used.
