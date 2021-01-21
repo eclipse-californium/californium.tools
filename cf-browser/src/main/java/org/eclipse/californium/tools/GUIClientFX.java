@@ -67,7 +67,6 @@ public class GUIClientFX extends Application {
 			config.setInt(Keys.TCP_CONNECTION_IDLE_TIMEOUT, 60 * 60 * 12); // 12h
 			config.setInt(Keys.TCP_CONNECT_TIMEOUT, 20);
 			config.setInt(Keys.TCP_WORKER_THREADS, 2);
-			config.setInt(Keys.DTLS_CONNECTION_ID_LENGTH, 0);
 		}
 	};
 
