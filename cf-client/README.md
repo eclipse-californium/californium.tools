@@ -28,7 +28,7 @@ Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop]
                      [--payload=<text> | --payloadhex=<hex> |
                      --payload64=<base64> | --payload-file=<file>] [--con |
                      --non] [URI]
-      [URI]                  destination URI. Default californium.eclipse.org
+      [URI]                  destination URI. Default californium.eclipseprojects.io
   -a, --auth=<authenticationModes>[:<authenticationModes>...]
                              use authentikation modes. '--help-auth' to list
                                available authentication modes.

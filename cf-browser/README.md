@@ -93,7 +93,7 @@ Usage: GUIClientFX [-hvV] [--help-auth] [--help-cipher]
                    [-c=<credentials> | --anonymous] [-t=<trusts>
                    [-t=<trusts>]... | --trust-all] [-s=<text> |
                    --secrethex=<hex> | --secret64=<base64>] [URI]
-      [URI]                  destination URI. Default californium.eclipse.org
+      [URI]                  destination URI. Default californium.eclipseprojects.io
   -a, --auth=<authenticationModes>[:<authenticationModes>...]
                              use authentikation modes. '--help-auth' to list
                                available authentication modes.
