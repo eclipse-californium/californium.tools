@@ -71,10 +71,19 @@ public class CoapBench {
 			String arg = args[index];
 			
 			if ("-c".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -c");
+				}
 				clients = args[index+1];
 			} else if ("-t".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -t");
+				}
 				time = Integer.parseInt(args[index+1]);
 			} else if ("-b".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -b");
+				}
 				bindAddr = args[index+1];
 			} else if ("-latency".equals(arg)) {
 				withLatency = true; index++; continue;
@@ -122,6 +131,9 @@ public class CoapBench {
 		while (index < args.length) {
 			String arg = args[index];
 			if ("-p".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -p");
+				}
 				port = Integer.parseInt(args[index+1]);
 			} else {
 				System.err.println("Unknwon arg "+arg);
@@ -142,8 +154,14 @@ public class CoapBench {
 		while (index < args.length) {
 			String arg = args[index];
 			if ("-a".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -a");
+				}
 				address = args[index+1];
 			} else if ("-p".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -p");
+				}
 				port = Integer.parseInt(args[index+1]);
 			} else if ("-v".equals(arg)) {
 				verbose = true;

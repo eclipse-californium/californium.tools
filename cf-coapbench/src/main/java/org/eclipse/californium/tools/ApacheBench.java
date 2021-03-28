@@ -55,37 +55,40 @@ public class ApacheBench {
 			Process p = Runtime.getRuntime().exec(command);
 			StringBuilder buffer = new StringBuilder("ab, ");
 			Scanner scanner = new Scanner(p.getInputStream());
+			try {
 				while (scanner.hasNext()) {
 					String line = scanner.nextLine().trim();
 					System.out.println(":"+line);
 					if (line.startsWith(CON_LEV))
-						buffer.append(new Scanner(line.split(":")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, ":")).append(", ");
 					if (line.startsWith(TIME))
-						buffer.append(new Scanner(line.split(":")[1]).nextDouble()).append(", ");
+						buffer.append(readDoubleArgument(line, ":")).append(", ");
 					if (line.startsWith(COM_REQ))
-						buffer.append(new Scanner(line.split(":")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, ":")).append(", ");
 					if (line.startsWith(REQ_PER_SEC))
-						buffer.append(new Scanner(line.split(":")[1]).nextDouble()).append(" | ");
+						buffer.append(readDoubleArgument(line, ":")).append(", ");
 					if (line.startsWith("50%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("66%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("75%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("80%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("90%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("95%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("98%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("99%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt()).append(", ");
+						buffer.append(readIntArgument(line, "%")).append(", ");
 					if (line.startsWith("100%"))
-						buffer.append(new Scanner(line.split("%")[1]).nextInt());
+						buffer.append(readIntArgument(line, "%")).append(", ");
 				}
-			scanner.close();
+			} finally {
+				scanner.close();
+			}
 			p.destroy();
 			log.println(buffer.toString());
 		} catch (Exception e) {
@@ -93,7 +96,19 @@ public class ApacheBench {
 			log.println("ERROR: "+command);
 		}
 	}
-	
+
+	private static int readIntArgument(String line, String separator) {
+		try (Scanner scanner = new Scanner(line.split(separator)[1])) {
+			return scanner.nextInt();
+		}
+	}
+
+	private static double readDoubleArgument(String line, String separator) {
+		try (Scanner scanner = new Scanner(line.split(separator)[1])) {
+			return scanner.nextDouble();
+		}
+	}
+
 	public static void main(String[] args) throws Exception {
 		args = new String[] {"-t", "5", "-n", "10000000", "-uri", "http://localhost:8000/benchmark/"
 				, "-cs", "2", "10", "20"};
@@ -103,28 +118,46 @@ public class ApacheBench {
 		int n = -1;
 		String uri = null;
 		boolean k = false;
-		if (args.length > 0) {
-			int index = 0;
-			while (index < args.length) {
-				String arg = args[index];
-				if ("-uri".equals(arg)) {
-					uri = args[index+1];
-				} else if ("-n".equals(arg)) {
-					n = Integer.parseInt(args[index+1]);
-				} else if ("-t".equals(arg)) {
-					t = Integer.parseInt(args[index+1]);
-				} else if ("-k".equals(arg)) {
-					k = true; index--;
-				} else if ("-c".equals(arg)) {
-					c = Integer.parseInt(args[index+1]);
-				} else if ("-cs".equals(arg)) {
-					int cn = Integer.parseInt(args[index+1]);
-					cs = new int[cn];
-					for (int i=0;i<cn;i++) cs[i] = Integer.parseInt(args[index+2+i]);
-					index += cn;
+		int index = 0;
+		while (index < args.length) {
+			String arg = args[index];
+			if ("-uri".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -uri");
 				}
-				index += 2;
+				uri = args[index+1];
+			} else if ("-n".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -n");
+				}
+				n = Integer.parseInt(args[index+1]);
+			} else if ("-t".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -t");
+				}
+				t = Integer.parseInt(args[index+1]);
+			} else if ("-k".equals(arg)) {
+				k = true; index--;
+			} else if ("-c".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -c");
+				}
+				c = Integer.parseInt(args[index+1]);
+			} else if ("-cs".equals(arg)) {
+				if (index + 1 == args.length) {
+					throw new IllegalArgumentException("Missing argument for -cs");
+				}
+				int cn = Integer.parseInt(args[index + 1]);
+				if (index + 2 + cn >= args.length) {
+					throw new IllegalArgumentException("Missing argument for -cs " + cn);
+				}
+				cs = new int[cn];
+				for (int i = 0; i < cn; i++) {
+					cs[i] = Integer.parseInt(args[index + 2 + i]);
+				}
+				index += cn;
 			}
+			index += 2;
 		}
 		
 		ApacheBench ab = new ApacheBench();

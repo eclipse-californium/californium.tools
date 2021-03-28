@@ -120,7 +120,7 @@ public class ConsoleClient {
 					if (method == null) {
 						method = CoAP.Code.GET;
 					}
-					if (ExtendedCode.DISCOVER.equals(extendedMethod) && destination != null) {
+					if (ExtendedCode.DISCOVER.equals(extendedMethod)) {
 						String path = destination.getPath();
 						if (path == null || path.isEmpty() || path.equals("/")) {
 							destination = new URI(destination.getScheme(), destination.getAuthority(),
@@ -230,7 +230,7 @@ public class ConsoleClient {
 
 			@Override
 			public void onResponse(final Response response) {
-				System.out.println("Time elapsed (ms): " + response.getRTT());
+				System.out.println("Time elapsed (ms): " + TimeUnit.NANOSECONDS.toMillis(response.getApplicationRttNanos()));
 
 				// check of response contains resources
 				if (response.getOptions().isContentFormat(MediaTypeRegistry.APPLICATION_LINK_FORMAT)) {

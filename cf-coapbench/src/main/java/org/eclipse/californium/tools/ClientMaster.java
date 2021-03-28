@@ -188,7 +188,7 @@ public class ClientMaster implements Runnable {
 	}
 	
 	private void observe_fail() {
-		System.out.println("Observe benchmark fails: " + ((slaves.size() < 0) ? "there are no registered slaves left." : "not all slaves have initialized the test successfully.")); 
+		System.out.println("Observe benchmark fails: " + (slaves.isEmpty() ? "there are no registered slaves left." : "not all slaves have initialized the test successfully.")); 
 		for (Slave s:getSlaves(Command.ALL))
 			s.send(CMD_OBSERVE_FAIL);
 	}
