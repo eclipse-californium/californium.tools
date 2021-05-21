@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -38,11 +39,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
 import org.eclipse.californium.core.coap.CoAP;
+import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.WebLink;
 import org.eclipse.californium.core.coap.ClientObserveRelation;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
@@ -385,15 +388,15 @@ public class GUIController {
 		LOG.info("Begin discovery, host={}", coapHost);
 		request.addMessageObserver(new ResponsePrinter(request) {
 
-			public void onResponse(Response response) {
+			public void onResponse(final Response response) {
 				LOG.info("Discovery, response: {}", response);
 				String text = response.getPayloadString();
 				Scanner scanner = new Scanner(text);
 				Pattern pattern = Pattern.compile("<");
 				scanner.useDelimiter(pattern);
 
-				ObservableList<String> ress1 = FXCollections.observableArrayList();
-				ArrayList<String> ress2 = new ArrayList<>();
+				final ObservableList<String> ress1 = FXCollections.observableArrayList();
+				final ArrayList<String> ress2 = new ArrayList<>();
 				ress1.add(coapHost);
 				ress2.add(".");
 
@@ -405,8 +408,11 @@ public class GUIController {
 					ress2.add(res);
 				}
 				scanner.close();
-				uriBox.itemsProperty().setValue(ress1);
-				Platform.runLater(() -> populateTree(ress2));
+				Platform.runLater(() -> {
+					uriBox.itemsProperty().setValue(ress1);
+					populateTree(ress2);
+					showResponse(response);
+				});
 			}
 		});
 		execute(request);
@@ -643,7 +649,16 @@ public class GUIController {
 				image = new Image(imgIS);
 			}
 			mediaTypeView.setImage(image);
-			responseArea.setText(response.getPayloadString());
+			String text = response.getPayloadString();
+			if (format == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
+				Set<WebLink> webLinks = LinkFormat.parse(text);
+				StringBuilder links = new StringBuilder();
+				for (WebLink link : webLinks) {
+					links.append(link).append(StringUtil.lineSeparator());
+				}
+				text = links.toString();
+			}
+			responseArea.setText(text);
 		}
 		String info = String.format("%s: %s %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", type, response.getType(),
 				response.getCode(), response.getCode().name(), size, response.getMID(),
@@ -673,7 +688,9 @@ public class GUIController {
 				StringBuilder text = new StringBuilder("Request:");
 				text.append(" token=").append(request.getTokenString());
 				text.append(", mid=").append(request.getMID());
-				text.append(", ").append(request.getBytes().length).append(" bytes.");
+				if (request.getBytes() != null) {
+					text.append(", ").append(request.getBytes().length).append(" bytes.");
+				}
 				requestTitle.setText(text.toString());
 			});
 			super.onReadyToSend();
