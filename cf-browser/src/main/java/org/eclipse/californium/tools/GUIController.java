@@ -26,6 +26,7 @@ import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,8 @@ public class GUIController {
 	private TextArea logArea;
 	@FXML
 	private CheckMenuItem logEnabled;
+	@FXML
+	private Menu messageTypeMenu;
 	@FXML
 	private Menu contentTypeMenu;
 	@FXML
@@ -194,7 +197,17 @@ public class GUIController {
 	public void initialize(Stage stage, GuiClientConfig config) {
 		this.stage = stage;
 		this.clientConfig = config;
+		boolean init = false;
+		Collections.reverse(config.uris);
+		for (String uri : config.uris) {
+			if (addURI(uri)) {
+				init = true;
+			}
+		}
 		if (addURI(config.uri)) {
+			init = true;
+		}
+		if (init) {
 			initializeUriBox();
 		}
 		applyRequestContent();
@@ -203,6 +216,18 @@ public class GUIController {
 			contentType = config.contentType.contentType;
 			selectContentTypeMenu(acceptMenu, config.contentType.contentType);
 			accept = config.contentType.contentType;
+		}
+		if (config.messageType != null) {
+			confirmed = config.messageType.con;
+			String name = confirmed ? "CON" : "NON";
+			for (MenuItem item : messageTypeMenu.getItems()) {
+				if (name.equals(item.getText())) {
+					if (item instanceof RadioMenuItem) {
+						((RadioMenuItem) item).setSelected(true);
+						break;
+					}
+				}
+			}
 		}
 	}
 
@@ -784,7 +809,8 @@ public class GUIController {
 						title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
 						title.append(" - to ").append(endpointContext.getPeerAddress());
 						area.append(FORMAT.format(new Date())).append(StringUtil.lineSeparator());
-						area.append("PEER: ").append(endpointContext.getPeerIdentity()).append(StringUtil.lineSeparator());
+						area.append("PEER: ").append(endpointContext.getPeerIdentity())
+								.append(StringUtil.lineSeparator());
 						for (Map.Entry<String, Object> entry : endpointContext.entries().entrySet()) {
 							area.append(entry.getKey()).append(": ").append(entry.getValue())
 									.append(StringUtil.lineSeparator());

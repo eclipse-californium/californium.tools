@@ -20,6 +20,7 @@ package org.eclipse.californium.tools;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
+import java.util.List;
 
 import org.eclipse.californium.cli.ClientBaseConfig;
 import org.eclipse.californium.cli.ClientConfig;
@@ -97,6 +98,12 @@ public class GUIClientFX extends Application {
 		 */
 		@ArgGroup(exclusive = true)
 		public MessageType messageType;
+
+		/**
+		 * Destination URI.
+		 */
+		@CommandLine.Parameters(index = "1", paramLabel = LABEL_URI, arity = "0..n", description = "additional destination URIs.")
+		public List<String> uris;
 
 		@Override
 		public void register(CommandLine cmd) {

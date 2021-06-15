@@ -44,7 +44,8 @@
 				</Menu>
 				<Menu mnemonicParsing="false" text="CoAP Details">
 					<items>
-						<Menu mnemonicParsing="false" text="Message Type">
+						<Menu mnemonicParsing="false" fx:id="messageTypeMenu"
+							text="Message Type">
 							<items>
 								<RadioMenuItem mnemonicParsing="false"
 									onAction="#setMessageType" text="NON"
