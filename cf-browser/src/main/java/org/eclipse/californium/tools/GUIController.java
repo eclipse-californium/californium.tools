@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +57,7 @@ import org.eclipse.californium.elements.DtlsEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.MapBasedEndpointContext;
 import org.eclipse.californium.elements.util.DaemonThreadFactory;
+import org.eclipse.californium.elements.util.StandardCharsets;
 import org.eclipse.californium.elements.util.StringUtil;
 import org.eclipse.californium.tools.GUIClientFX.GuiClientConfig;
 import org.slf4j.Logger;
@@ -69,6 +71,9 @@ import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
@@ -82,6 +87,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 /**
@@ -574,6 +580,27 @@ public class GUIController {
 		}
 	}
 
+	@FXML
+	private void credentialsDialog() {
+		try {
+			URL fxml = getClass().getResource("dialog.fxml");
+			FXMLLoader loader = new FXMLLoader(fxml);
+			loader.setCharset(StandardCharsets.UTF_8);
+			Parent root = loader.load();
+			GUIDialog dialog = loader.getController();
+
+			Stage dialogStage = new Stage();
+			dialogStage.initModality(Modality.WINDOW_MODAL);
+
+			dialog.initialize(dialogStage, clientConfig);
+			dialogStage.setTitle("CoAP Client Credentials");
+			dialogStage.setScene(new Scene(root));
+			dialogStage.show();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	private String getHost() {
 		String uri = uriBox.getSelectionModel().getSelectedItem();
 		StringTokenizer st = new StringTokenizer(uri, "/");
@@ -662,19 +689,7 @@ public class GUIController {
 	}
 
 	private void logException(Request request, Exception ex) {
-		StringBuilder tmp = new StringBuilder();
-		if (request != null) {
-			tmp.append(request).append("\n");
-		}
-		tmp.append("\t").append(ex);
-		StackTraceElement[] stackTrace = ex.getStackTrace();
-		for (StackTraceElement element: stackTrace) {
-			if (element.getClassName().startsWith("sun.reflect.")) {
-				break;
-			}
-			tmp.append("\n\t\t").append(element);
-		}
-		LOG.error(tmp.toString());
+		LOG.error(logMessage(request, ex));
 	}
 
 	private void showResponse(Response response) {
@@ -877,6 +892,22 @@ public class GUIController {
 				}
 			});
 		}
+	}
+
+	public static String logMessage(Request request, Exception ex) {
+		StringBuilder tmp = new StringBuilder();
+		if (request != null) {
+			tmp.append(request).append("\n");
+		}
+		tmp.append("\t").append(ex);
+		StackTraceElement[] stackTrace = ex.getStackTrace();
+		for (StackTraceElement element : stackTrace) {
+			if (element.getClassName().startsWith("sun.reflect.")) {
+				break;
+			}
+			tmp.append("\n\t\t").append(element);
+		}
+		return tmp.toString();
 	}
 
 }
