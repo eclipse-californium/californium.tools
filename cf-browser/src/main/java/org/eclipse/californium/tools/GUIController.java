@@ -46,6 +46,8 @@ import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.cli.ClientInitializer;
+import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
 import org.eclipse.californium.core.WebLink;
 import org.eclipse.californium.core.coap.ClientObserveRelation;
 import org.eclipse.californium.core.network.Endpoint;
@@ -323,27 +325,34 @@ public class GUIController {
 	}
 
 	private Endpoint getLocalEndpoint(String uri) {
+		String scheme = CoAP.getSchemeFromUri(uri);
+		if (scheme == null) {
+			scheme = uri;
+		}
+		Endpoint endpoint = null;
 		try {
-			String scheme = CoAP.getSchemeFromUri(uri);
-			if (scheme == null) {
-				scheme = uri;
+			endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
+		} catch (IllegalStateException e) {
+			clientConfig.uri = uri == scheme ? scheme + CoAP.URI_SCHEME_SEPARATOR : uri;
+			if (clientConfig.authenticationModes.isEmpty()) {
+				clientConfig.authenticationModes.add(AuthenticationMode.PSK);
 			}
-			Endpoint endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
-			synchronized (this) {
-				if (this.endpoint != endpoint) {
-					if (this.endpoint != null) {
-						this.endpoint.removeNotificationListener(notificationPrinter);
-					}
-					this.endpoint = endpoint;
-					if (this.endpoint != null) {
-						this.endpoint.addNotificationListener(notificationPrinter);
-					}
+			endpoint = ClientInitializer.createEndpoint(clientConfig, null);
+			EndpointManager.getEndpointManager().setDefaultEndpoint(endpoint);
+		} catch (RuntimeException e) {
+		}
+		synchronized (this) {
+			if (this.endpoint != endpoint) {
+				if (this.endpoint != null) {
+					this.endpoint.removeNotificationListener(notificationPrinter);
+				}
+				this.endpoint = endpoint;
+				if (this.endpoint != null) {
+					this.endpoint.addNotificationListener(notificationPrinter);
 				}
 			}
-			return endpoint;
-		} catch (RuntimeException e) {
-			return null;
 		}
+		return endpoint;
 	}
 
 	private void resetConnectionTitle() {
