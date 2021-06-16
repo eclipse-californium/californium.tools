@@ -153,6 +153,7 @@ public class GUIController {
 	private Image unknown;
 	private Image blank;
 
+	private Request current;
 	private NotificationPrinter notificationPrinter;
 
 	private Endpoint endpoint;
@@ -642,6 +643,14 @@ public class GUIController {
 		try {
 			Endpoint endpoint = getLocalEndpoint(request.getScheme());
 			if (endpoint != null) {
+				Request cancel;
+				synchronized (this) {
+					cancel = current;
+					current = request;
+				}
+				if (cancel != null) {
+					cancel.cancel();
+				}
 				request.send(endpoint);
 				LOG.info("Sent request: {}", request);
 			}
