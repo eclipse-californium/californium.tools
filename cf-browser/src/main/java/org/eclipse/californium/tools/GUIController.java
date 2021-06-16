@@ -90,7 +90,7 @@ import javafx.stage.Stage;
 public class GUIController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
-	private static final String DEFAULT_URI = "coap://localhost:5683";
+	public static final String DEFAULT_URI = "coap://localhost:5683";
 	private static final String SANDBOX_URI = "coap://californium.eclipseprojects.io";
 	private static final String SANDBOX_SECURE_URI = "coaps://californium.eclipseprojects.io";
 
@@ -198,10 +198,12 @@ public class GUIController {
 		this.stage = stage;
 		this.clientConfig = config;
 		boolean init = false;
-		Collections.reverse(config.uris);
-		for (String uri : config.uris) {
-			if (addURI(uri)) {
-				init = true;
+		if (config.uris != null) {
+			Collections.reverse(config.uris);
+			for (String uri : config.uris) {
+				if (addURI(uri)) {
+					init = true;
+				}
 			}
 		}
 		if (addURI(config.uri)) {

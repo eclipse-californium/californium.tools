@@ -102,7 +102,7 @@ public class GUIClientFX extends Application {
 		/**
 		 * Destination URI.
 		 */
-		@CommandLine.Parameters(index = "1", paramLabel = LABEL_URI, arity = "0..n", description = "additional destination URIs.")
+		@CommandLine.Parameters(index = "1..*", paramLabel = "(more URIs)", arity = "0..n", description = "additional destination URIs.")
 		public List<String> uris;
 
 		@Override
@@ -138,6 +138,7 @@ public class GUIClientFX extends Application {
 	public void start(Stage primaryStage) throws Exception {
 		Parameters parameters = getParameters();
 		final GuiClientConfig clientConfig = new GuiClientConfig();
+		clientConfig.defaultUri = GUIController.DEFAULT_URI;
 		clientConfig.networkConfigDefaultHandler = DEFAULTS;
 		ClientInitializer.init(parameters.getRaw().toArray(new String[0]), clientConfig);
 		if (clientConfig.helpRequested) {
