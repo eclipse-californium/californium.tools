@@ -21,8 +21,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -421,8 +419,6 @@ public class GUIController {
 	private void discoveryRequest() {
 		Request request = new Request(CoAP.Code.GET);
 		coapHost = getHost();
-		request.setURI(coapHost + "/.well-known/core");
-		LOG.info("Begin discovery, host={}", coapHost);
 		request.addMessageObserver(new ResponsePrinter(request) {
 
 			public void onResponse(final Response response) {
@@ -452,7 +448,13 @@ public class GUIController {
 				});
 			}
 		});
-		execute(request);
+		try {
+			request.setURI(coapHost + "/.well-known/core");
+			LOG.info("Begin discovery, host={}", coapHost);
+			execute(request);
+		} catch (Exception ex) {
+			logException(request, ex);
+		}
 	}
 
 	@FXML
@@ -620,48 +622,59 @@ public class GUIController {
 		}
 		String uri = uriBox.getSelectionModel().getSelectedItem();
 		uri = uri.replace(" ", "%20");
-		request.setURI(uri);
-		request.addMessageObserver(new ResponsePrinter(request));
-		if (request.isIntendedPayload()) {
-			applyRequestContent();
-			String text = requestArea.getText();
-			if (!text.isEmpty()) {
-				request.setPayload(text);
+		try {
+			request.setURI(uri);
+			request.addMessageObserver(new ResponsePrinter(request));
+			if (request.isIntendedPayload()) {
+				applyRequestContent();
+				String text = requestArea.getText();
+				if (!text.isEmpty()) {
+					request.setPayload(text);
+				}
+				if (contentType != MediaTypeRegistry.UNDEFINED) {
+					request.getOptions().setContentFormat(contentType);
+				}
 			}
-			if (contentType != MediaTypeRegistry.UNDEFINED) {
-				request.getOptions().setContentFormat(contentType);
+			if (accept != MediaTypeRegistry.UNDEFINED) {
+				request.getOptions().setAccept(accept);
 			}
+			request.setConfirmable(confirmed);
+			execute(request);
+		} catch (Exception ex) {
+			logException(request, ex);
 		}
-		if (accept != MediaTypeRegistry.UNDEFINED) {
-			request.getOptions().setAccept(accept);
-		}
-		request.setConfirmable(confirmed);
-		execute(request);
 	}
 
 	private void execute(Request request) {
-		try {
-			Endpoint endpoint = getLocalEndpoint(request.getScheme());
-			if (endpoint != null) {
-				Request cancel;
-				synchronized (this) {
-					cancel = current;
-					current = request;
-				}
-				if (cancel != null) {
-					cancel.cancel();
-				}
-				request.send(endpoint);
-				LOG.info("Sent request: {}", request);
+		Endpoint endpoint = getLocalEndpoint(request.getScheme());
+		if (endpoint != null) {
+			Request cancel;
+			synchronized (this) {
+				cancel = current;
+				current = request;
 			}
-		} catch (Exception ex) {
-			StringBuilder tmp = new StringBuilder(request.toString());
-			tmp.append('\n');
-			StringWriter sw = new StringWriter();
-			ex.printStackTrace(new PrintWriter(sw));
-			tmp.append(sw.toString());
-			LOG.error(tmp.toString());
+			if (cancel != null) {
+				cancel.cancel();
+			}
+			request.send(endpoint);
+			LOG.info("Sent request: {}", request);
 		}
+	}
+
+	private void logException(Request request, Exception ex) {
+		StringBuilder tmp = new StringBuilder();
+		if (request != null) {
+			tmp.append(request).append("\n");
+		}
+		tmp.append("\t").append(ex);
+		StackTraceElement[] stackTrace = ex.getStackTrace();
+		for (StackTraceElement element: stackTrace) {
+			if (element.getClassName().startsWith("sun.reflect.")) {
+				break;
+			}
+			tmp.append("\n\t\t").append(element);
+		}
+		LOG.error(tmp.toString());
 	}
 
 	private void showResponse(Response response) {
