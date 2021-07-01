@@ -53,6 +53,7 @@ import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.observe.NotificationListener;
 import org.eclipse.californium.elements.AddressEndpointContext;
+import org.eclipse.californium.elements.Definition;
 import org.eclipse.californium.elements.DtlsEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.MapBasedEndpointContext;
@@ -870,8 +871,8 @@ public class GUIController {
 						area.append(FORMAT.format(new Date())).append(StringUtil.lineSeparator());
 						area.append("PEER: ").append(endpointContext.getPeerIdentity())
 								.append(StringUtil.lineSeparator());
-						for (Map.Entry<String, Object> entry : endpointContext.entries().entrySet()) {
-							area.append(entry.getKey()).append(": ").append(entry.getValue())
+						for (Map.Entry<Definition<?>, Object> entry : endpointContext.entries().entrySet()) {
+							area.append(entry.getKey().getKey()).append(": ").append(entry.getValue())
 									.append(StringUtil.lineSeparator());
 						}
 					}
