@@ -32,11 +32,12 @@ import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.EndpointContextTracer;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.CoAP.Type;
-import org.eclipse.californium.core.network.config.NetworkConfig;
-import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
-import org.eclipse.californium.core.network.config.NetworkConfig.Keys;
+import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
+import org.eclipse.californium.elements.config.Configuration;
+import org.eclipse.californium.elements.config.Configuration.DefinitionsProvider;
+import org.eclipse.californium.elements.config.TcpConfig;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
@@ -80,19 +81,18 @@ public class ConsoleClient {
 	private static final int DEFAULT_MAX_RESOURCE_SIZE = 8192;
 	private static final int DEFAULT_BLOCK_SIZE = 1024;
 
-	private static NetworkConfigDefaultHandler DEFAULTS = new NetworkConfigDefaultHandler() {
+	private static DefinitionsProvider DEFAULTS = new DefinitionsProvider() {
 
 		@Override
-		public void applyDefaults(NetworkConfig config) {
-			config.setInt(Keys.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
-			config.setInt(Keys.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);
-			config.setInt(Keys.PREFERRED_BLOCK_SIZE, DEFAULT_BLOCK_SIZE);
-			config.setInt(Keys.MAX_ACTIVE_PEERS, 10);
-			config.setInt(Keys.MAX_PEER_INACTIVITY_PERIOD, 60 * 60 * 24); // 24h
-			config.setInt(Keys.TCP_CONNECTION_IDLE_TIMEOUT, 60 * 60 * 12); // 12h
-			config.setInt(Keys.TCP_CONNECT_TIMEOUT, 20);
-			config.setInt(Keys.TCP_WORKER_THREADS, 2);
-			config.setInt(Keys.DTLS_CONNECTION_ID_LENGTH, 0);
+		public void applyDefinitions(Configuration config) {
+			config.set(CoapConfig.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
+			config.set(CoapConfig.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);
+			config.set(CoapConfig.PREFERRED_BLOCK_SIZE, DEFAULT_BLOCK_SIZE);
+			config.set(CoapConfig.MAX_ACTIVE_PEERS, 10);
+			config.set(CoapConfig.MAX_PEER_INACTIVITY_PERIOD, 24, TimeUnit.HOURS);
+			config.set(TcpConfig.TCP_CONNECTION_IDLE_TIMEOUT, 12, TimeUnit.HOURS);
+			config.set(TcpConfig.TCP_CONNECT_TIMEOUT, 20, TimeUnit.SECONDS);
+			config.set(TcpConfig.TCP_WORKER_THREADS, 2);
 		}
 	};
 
@@ -139,7 +139,7 @@ public class ConsoleClient {
 	 */
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 		final Config clientConfig = new Config();
-		clientConfig.networkConfigDefaultHandler = DEFAULTS;
+		clientConfig.customConfigurationDefaultsProvider = DEFAULTS;
 
 		ClientInitializer.init(args, clientConfig);
 

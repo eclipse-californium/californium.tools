@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.californium.cli.ClientBaseConfig;
 import org.eclipse.californium.cli.ClientConfig;
@@ -28,10 +29,12 @@ import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.cli.ClientConfig.ContentType;
 import org.eclipse.californium.cli.ClientConfig.MessageType;
 import org.eclipse.californium.cli.ClientConfig.Payload;
-import org.eclipse.californium.core.network.config.NetworkConfig;
-import org.eclipse.californium.core.network.config.NetworkConfigDefaultHandler;
+import org.eclipse.californium.core.config.CoapConfig;
+import org.eclipse.californium.core.config.CoapConfig.MatcherMode;
+import org.eclipse.californium.elements.config.Configuration;
+import org.eclipse.californium.elements.config.Configuration.DefinitionsProvider;
+import org.eclipse.californium.elements.config.TcpConfig;
 import org.eclipse.californium.elements.util.StandardCharsets;
-import org.eclipse.californium.core.network.config.NetworkConfig.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,19 +58,19 @@ public class GUIClientFX extends Application {
 	private static final int DEFAULT_MAX_RESOURCE_SIZE = 8192;
 	private static final int DEFAULT_BLOCK_SIZE = 1024;
 
-	private static NetworkConfigDefaultHandler DEFAULTS = new NetworkConfigDefaultHandler() {
+	private static DefinitionsProvider DEFAULTS = new DefinitionsProvider() {
 
 		@Override
-		public void applyDefaults(NetworkConfig config) {
-			config.setString(Keys.RESPONSE_MATCHING, "PRINCIPAL");
-			config.setInt(Keys.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
-			config.setInt(Keys.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);
-			config.setInt(Keys.PREFERRED_BLOCK_SIZE, DEFAULT_BLOCK_SIZE);
-			config.setInt(Keys.MAX_ACTIVE_PEERS, 10);
-			config.setInt(Keys.MAX_PEER_INACTIVITY_PERIOD, 60 * 60 * 24); // 24h
-			config.setInt(Keys.TCP_CONNECTION_IDLE_TIMEOUT, 60 * 60 * 12); // 12h
-			config.setInt(Keys.TCP_CONNECT_TIMEOUT, 20);
-			config.setInt(Keys.TCP_WORKER_THREADS, 2);
+		public void applyDefinitions(Configuration config) {
+			config.set(CoapConfig.RESPONSE_MATCHING, MatcherMode.PRINCIPAL);
+			config.set(CoapConfig.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
+			config.set(CoapConfig.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);
+			config.set(CoapConfig.PREFERRED_BLOCK_SIZE, DEFAULT_BLOCK_SIZE);
+			config.set(CoapConfig.MAX_ACTIVE_PEERS, 10);
+			config.set(CoapConfig.MAX_PEER_INACTIVITY_PERIOD, 24, TimeUnit.HOURS);
+			config.set(TcpConfig.TCP_CONNECTION_IDLE_TIMEOUT, 12, TimeUnit.HOURS);
+			config.set(TcpConfig.TCP_CONNECT_TIMEOUT, 20, TimeUnit.SECONDS);
+			config.set(TcpConfig.TCP_WORKER_THREADS, 2);
 		}
 	};
 
@@ -118,7 +121,7 @@ public class GUIClientFX extends Application {
 				contentType.defaults();
 			}
 			if (payload != null) {
-				int max = networkConfig.getInt(Keys.MAX_RESOURCE_BODY_SIZE);
+				int max = configuration.get(CoapConfig.MAX_RESOURCE_BODY_SIZE);
 				payload.defaults(max);
 			}
 		}
@@ -139,7 +142,7 @@ public class GUIClientFX extends Application {
 		Parameters parameters = getParameters();
 		final GuiClientConfig clientConfig = new GuiClientConfig();
 		clientConfig.defaultUri = GUIController.DEFAULT_URI;
-		clientConfig.networkConfigDefaultHandler = DEFAULTS;
+		clientConfig.customConfigurationDefaultsProvider = DEFAULTS;
 		ClientInitializer.init(parameters.getRaw().toArray(new String[0]), clientConfig);
 		if (clientConfig.helpRequested) {
 			System.exit(0);
