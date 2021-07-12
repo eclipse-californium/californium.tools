@@ -789,7 +789,7 @@ public class GUIController {
 				String mode = destinationContext.getString(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
 				if (mode == null) {
 					EndpointContext probeContext = MapBasedEndpointContext.addEntries(destinationContext,
-							DtlsEndpointContext.KEY_HANDSHAKE_MODE, DtlsEndpointContext.HANDSHAKE_MODE_PROBE);
+							DtlsEndpointContext.ATTRIBUTE_HANDSHAKE_MODE_PROBE);
 					request.setEffectiveDestinationContext(probeContext);
 					reconnect.set(true);
 				}
