@@ -693,6 +693,17 @@ public class GUIController {
 	}
 
 	private void showResponse(Response response) {
+		if (observe != null) {
+			boolean show = observe.onResponse(response);
+			if (!response.isNotification()) {
+				LOG.info("CoAP-server stopped observe!");
+				observeButton.setText("OBSERVE");
+				setButtonsDisable(false);
+				observe = null;
+			} else if (!show) {
+				return;
+			}
+		}
 		String type = response.isNotification() ? "Notification" : "Response";
 		LOG.info("Received {}: {}", type, response);
 		int size = response.getPayloadSize();
@@ -886,9 +897,7 @@ public class GUIController {
 		public void onNotification(final Request request, final Response response) {
 			Platform.runLater(() -> {
 				if (observe != null && observe.matchRequest(request)) {
-					if (observe.onResponse(response)) {
-						showResponse(response);
-					}
+					showResponse(response);
 				}
 			});
 		}
