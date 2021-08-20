@@ -96,6 +96,10 @@ public class GUIDialog {
 			formatBase64.setSelected(true);
 			secret = secretConfig.base64;
 			format = "base64";
+		} else {
+			formatText.setSelected(true);
+			secret = "";
+			format = "text";
 		}
 		if (formatText.isSelected()) {
 			this.secret.setText(secret);
