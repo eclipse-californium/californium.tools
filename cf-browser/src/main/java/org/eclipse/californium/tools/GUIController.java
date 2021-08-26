@@ -33,6 +33,8 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -170,6 +172,8 @@ public class GUIController {
 	private Random random = new Random();
 
 	private String requestText;
+
+	private ConcurrentMap<InetSocketAddress, Date> connectionTime = new ConcurrentHashMap<>();
 
 	public GUIController() {
 		URIS.add(DEFAULT_URI);
@@ -449,7 +453,6 @@ public class GUIController {
 				}
 				scanner.close();
 				Platform.runLater(() -> {
-					uriBox.itemsProperty().setValue(ress1);
 					populateTree(ress2);
 					showResponse(response);
 				});
@@ -492,6 +495,7 @@ public class GUIController {
 			try {
 				endpoint.stop();
 				endpoint.start();
+				connectionTime.clear();
 				resetConnectionTitle();
 				connectionArea.setText("");
 			} catch (IOException ex) {
@@ -640,8 +644,6 @@ public class GUIController {
 	 * @param request - the coap request type
 	 */
 	private void performRequest(Request request) {
-		responseArea.setText("no response yet");
-		responseTitle.setText("Response: none");
 		if (clientConfig.proxy != null) {
 			request.setDestinationContext(new AddressEndpointContext(clientConfig.proxy.destination));
 			if (clientConfig.proxy.scheme != null) {
@@ -676,14 +678,9 @@ public class GUIController {
 	private void execute(Request request) {
 		Endpoint endpoint = getLocalEndpoint(request.getScheme());
 		if (endpoint != null) {
-			Request cancel;
-			synchronized (this) {
-				cancel = current;
-				current = request;
-			}
-			if (cancel != null) {
-				cancel.cancel();
-			}
+			setCurrentRequest(request);
+			responseArea.setText("no response yet");
+			responseTitle.setText("Response: none");
 			request.send(endpoint);
 			LOG.info("Sent request: {}", request);
 		}
@@ -749,6 +746,50 @@ public class GUIController {
 				response.getCode(), response.getCode().name(), size, response.getMID(),
 				StringUtil.toDisplayString(source), mediaType);
 		responseTitle.setText(info);
+	}
+
+	private void setCurrentRequest(Request request) {
+		Request previous = null;
+		synchronized (this) {
+			if (current != request) {
+				previous = current;
+				current = request;
+			}
+		}
+		if (previous != null) {
+			previous.cancel();
+		}
+	}
+
+	private void resetCurrentRequest(Request request) {
+		synchronized (this) {
+			if (current == request) {
+				current = null;
+			}
+		}
+	}
+
+	private void showEndpointContext(String scheme, EndpointContext context) {
+		InetSocketAddress address = context.getPeerAddress();
+		StringBuilder title = new StringBuilder("Connection:");
+		StringBuilder area = new StringBuilder();
+		Endpoint endpoint = getLocalEndpoint(scheme);
+		if (endpoint != null) {
+			title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
+			title.append(" - to ").append(address);
+		}
+		connectionTime.putIfAbsent(address, new Date());
+		Date time = connectionTime.get(address);
+		area.append(FORMAT.format(time)).append(StringUtil.lineSeparator());
+		if (context.getPeerIdentity() != null) {
+			area.append("PEER: ").append(context.getPeerIdentity()).append(StringUtil.lineSeparator());
+		}
+		for (Map.Entry<Definition<?>, Object> entry : context.entries().entrySet()) {
+			area.append(entry.getKey().getKey()).append(": ").append(entry.getValue())
+					.append(StringUtil.lineSeparator());
+		}
+		connectionTitle.setText(title.toString());
+		connectionArea.setText(area.toString());
 	}
 
 	private static final SimpleDateFormat FORMAT = new SimpleDateFormat("MMM d. HH:mm:ss [SSS]");
@@ -821,6 +862,7 @@ public class GUIController {
 
 		@Override
 		public void onReject() {
+			resetCurrentRequest(request);
 			Platform.runLater(() -> {
 				LOG.info("rejected");
 				mediaTypeView.setImage(blank);
@@ -834,6 +876,7 @@ public class GUIController {
 
 		@Override
 		public void onTimeout() {
+			resetCurrentRequest(request);
 			Platform.runLater(() -> {
 				LOG.info("timeout");
 				mediaTypeView.setImage(blank);
@@ -844,7 +887,22 @@ public class GUIController {
 		}
 
 		@Override
+		public void onCancel() {
+			resetCurrentRequest(request);
+			Platform.runLater(() -> {
+				LOG.info("cancel request");
+				responseArea.setText("");
+				responseTitle.setText("Response: Canceled");
+				if (connect.get()) {
+					connectionArea.setText("");
+				}
+			});
+			super.onCancel();
+		}
+
+		@Override
 		public void onSendError(final Throwable error) {
+			resetCurrentRequest(request);
 			Platform.runLater(() -> {
 				LOG.info("send error", error);
 				mediaTypeView.setImage(blank);
@@ -854,30 +912,19 @@ public class GUIController {
 				}
 				responseArea.setText(text);
 				responseTitle.setText("Response: Send Error");
+				if (connect.get()) {
+					connectionArea.setText("");
+				}
 			});
 			super.onSendError(error);
 		}
 
 		@Override
-		public void onContextEstablished(EndpointContext endpointContext) {
+		public void onContextEstablished(final EndpointContext endpointContext) {
 			if (connect.get()) {
+				connectionTime.put(endpointContext.getPeerAddress(), new Date());
 				Platform.runLater(() -> {
-					StringBuilder title = new StringBuilder("Connection:");
-					StringBuilder area = new StringBuilder();
-					Endpoint endpoint = getLocalEndpoint(scheme);
-					if (endpoint != null) {
-						title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
-						title.append(" - to ").append(endpointContext.getPeerAddress());
-						area.append(FORMAT.format(new Date())).append(StringUtil.lineSeparator());
-						area.append("PEER: ").append(endpointContext.getPeerIdentity())
-								.append(StringUtil.lineSeparator());
-						for (Map.Entry<Definition<?>, Object> entry : endpointContext.entries().entrySet()) {
-							area.append(entry.getKey().getKey()).append(": ").append(entry.getValue())
-									.append(StringUtil.lineSeparator());
-						}
-					}
-					connectionTitle.setText(title.toString());
-					connectionArea.setText(area.toString());
+					showEndpointContext(scheme, endpointContext);
 				});
 			}
 			super.onContextEstablished(endpointContext);
@@ -885,7 +932,9 @@ public class GUIController {
 
 		@Override
 		public void onResponse(final Response response) {
+			resetCurrentRequest(request);
 			Platform.runLater(() -> {
+				showEndpointContext(scheme, response.getSourceContext());
 				showResponse(response);
 			});
 			super.onResponse(response);
@@ -919,5 +968,4 @@ public class GUIController {
 		}
 		return tmp.toString();
 	}
-
 }
