@@ -29,6 +29,8 @@ import java.util.concurrent.CyclicBarrier;
 
 import org.eclipse.californium.core.CoapClient;
 import org.eclipse.californium.core.CoapResponse;
+import org.eclipse.californium.core.config.CoapConfig;
+import org.eclipse.californium.elements.config.UdpConfig;
 
 /**
  * The VirtualClient manager creates the virtual clients for the benchmarks.
@@ -39,6 +41,11 @@ public class VirtualDeviceManager {
 
 	public static final String LOG_FILE = "coapbench";
 	
+	static {
+		CoapConfig.register();
+		UdpConfig.register();
+	}
+
 	private Timer timer;
 
 	private URI uri;

@@ -18,9 +18,12 @@ package org.eclipse.californium.tools;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+
 import org.eclipse.californium.core.CoapServer;
-import org.eclipse.californium.core.coap.CoAP;
+import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.core.network.CoapEndpoint;
+import org.eclipse.californium.elements.config.Configuration;
+import org.eclipse.californium.elements.config.UdpConfig;
 import org.eclipse.californium.elements.util.NetworkInterfacesUtil;
 import org.eclipse.californium.tools.resources.RDLookUpTopResource;
 import org.eclipse.californium.tools.resources.RDResource;
@@ -36,6 +39,10 @@ public class ResourceDirectory extends CoapServer {
 	public static final int ERR_INIT_FAILED = 1;
 
 	public static void main(String[] args) {
+		CoapConfig.register();
+		UdpConfig.register();
+
+		Configuration config = Configuration.getStandard();
 
 		// create server
 		CoapServer server = new ResourceDirectory();
@@ -45,7 +52,7 @@ public class ResourceDirectory extends CoapServer {
 		for (InetAddress addr : NetworkInterfacesUtil.getNetworkInterfaces()) {
 			if (!addr.isLinkLocalAddress()) {
 				CoapEndpoint.Builder builder = new CoapEndpoint.Builder();
-				builder.setInetSocketAddress(new InetSocketAddress(addr, CoAP.DEFAULT_COAP_PORT));
+				builder.setInetSocketAddress(new InetSocketAddress(addr, config.get(CoapConfig.COAP_PORT)));
 				server.addEndpoint(builder.build());
 			}
 		}

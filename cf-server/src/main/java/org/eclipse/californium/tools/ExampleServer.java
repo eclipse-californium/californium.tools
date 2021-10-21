@@ -18,6 +18,8 @@ package org.eclipse.californium.tools;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.config.CoapConfig;
+import org.eclipse.californium.elements.config.UdpConfig;
 import org.eclipse.californium.tools.resources.FibonacciResource;
 import org.eclipse.californium.tools.resources.HelloWorldResource;
 import org.eclipse.californium.tools.resources.ImageResource;
@@ -31,6 +33,9 @@ import org.eclipse.californium.tools.resources.StorageResource;
 public class ExampleServer {
 	
 	public static void main(String[] args) throws Exception {
+		CoapConfig.register();
+		UdpConfig.register();
+
 		CoapServer server = new CoapServer();
 
 		server.add(new HelloWorldResource("hello"));
@@ -49,7 +54,7 @@ public class ExampleServer {
 	public static void selfTest() {
 		try {
 			Request request = Request.newGet();
-			request.setURI("localhost:5683/hello");
+			request.setURI("coap://localhost:5683/hello");
 			request.send();
 			Response response = request.waitForResponse(1000);
 			System.out.println("received "+response);
