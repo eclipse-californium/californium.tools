@@ -316,6 +316,20 @@ public class GUIController {
 		uriBox.getSelectionModel().select(0);
 	}
 
+	private void updateUriBox(String uri) {
+		ObservableList<String> list = uriBox.itemsProperty().get();
+		if (!list.contains(uri)) {
+			LOG.info("Add {}", uri);
+			list.add(0, uri);
+			uriBox.getSelectionModel().select(0);
+		}
+	}
+
+	@FXML
+	private void resetUris() {
+		initializeUriBox();
+	}
+
 	@FXML
 	private void initialize() {
 		initializeUriBox();
@@ -936,6 +950,7 @@ public class GUIController {
 			Platform.runLater(() -> {
 				showEndpointContext(scheme, response.getSourceContext());
 				showResponse(response);
+				updateUriBox(request.getURI());
 			});
 			super.onResponse(response);
 		}

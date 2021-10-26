@@ -59,7 +59,9 @@
 				<Menu mnemonicParsing="false" text="Connection">
 					<items>
 						<MenuItem mnemonicParsing="false"
-							onAction="#resetConnection" text="Reset" />
+							onAction="#resetConnection" text="Reset Connection" />
+						<MenuItem mnemonicParsing="false"
+							onAction="#resetUris" text="Reset URIs" />
 						<MenuItem mnemonicParsing="false"
 							onAction="#credentialsDialog" text="Credentials ..." />
 					</items>
