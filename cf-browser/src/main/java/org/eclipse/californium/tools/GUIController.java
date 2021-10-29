@@ -59,6 +59,7 @@ import org.eclipse.californium.elements.Definition;
 import org.eclipse.californium.elements.DtlsEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.MapBasedEndpointContext;
+import org.eclipse.californium.elements.MapBasedEndpointContext.Attributes;
 import org.eclipse.californium.elements.util.DaemonThreadFactory;
 import org.eclipse.californium.elements.util.StandardCharsets;
 import org.eclipse.californium.elements.util.StringUtil;
@@ -116,6 +117,8 @@ public class GUIController {
 	@FXML
 	private CheckMenuItem logEnabled;
 	@FXML
+	private Menu handshakeTypeMenu;
+	@FXML
 	private Menu messageTypeMenu;
 	@FXML
 	private Menu contentTypeMenu;
@@ -152,6 +155,9 @@ public class GUIController {
 	@FXML
 	private Button discoverButton;
 
+	@FXML
+	private RadioMenuItem handshakeTypeMenuItemNo;
+
 	private String coapHost;
 	private int accept = MediaTypeRegistry.TEXT_PLAIN;
 	private int contentType = MediaTypeRegistry.TEXT_PLAIN;
@@ -162,6 +168,8 @@ public class GUIController {
 
 	private Request current;
 	private NotificationPrinter notificationPrinter;
+
+	private Attributes dtlsHandshakeMode;
 
 	private Endpoint endpoint;
 
@@ -349,6 +357,10 @@ public class GUIController {
 	}
 
 	private Endpoint getLocalEndpoint(String uri) {
+		return getLocalEndpoint(uri, false);
+	}
+
+	private Endpoint getLocalEndpoint(String uri, boolean reset) {
 		String scheme = CoAP.getSchemeFromUri(uri);
 		if (scheme == null) {
 			scheme = uri;
@@ -356,6 +368,11 @@ public class GUIController {
 		Endpoint endpoint = null;
 		try {
 			endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
+			if (reset) {
+				endpoint.stop();
+				endpoint.destroy();
+				throw new IllegalStateException("reset endpoint!");
+			}
 		} catch (IllegalStateException e) {
 			clientConfig.uri = uri == scheme ? scheme + CoAP.URI_SCHEME_SEPARATOR : uri;
 			if (clientConfig.authenticationModes.isEmpty()) {
@@ -504,6 +521,38 @@ public class GUIController {
 
 	@FXML
 	private void resetConnection() {
+		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem(), true);
+		if (endpoint != null) {
+			connectionTime.clear();
+			resetConnectionTitle();
+			connectionArea.setText("");
+		}
+	}
+
+	@FXML
+	private void setHandshakeType(ActionEvent event) {
+		MenuItem item = (MenuItem) event.getSource();
+		if (item == handshakeTypeMenuItemNo) {
+			dtlsHandshakeMode = null;
+		} else {
+			String id = item.getId();
+			if (id.equalsIgnoreCase("handshakeTypeMenuItemResume")) {
+				dtlsHandshakeMode = DtlsEndpointContext.ATTRIBUTE_HANDSHAKE_MODE_FORCE;
+			} else if (id.equalsIgnoreCase("handshakeTypeMenuItemFull")) {
+				dtlsHandshakeMode = DtlsEndpointContext.ATTRIBUE_HANDSHAKE_MODE_FORCE_FULL;
+			}
+		}
+	}
+
+	private void resetHandshakeType() {
+		if (handshakeTypeMenuItemNo != null) {
+			handshakeTypeMenuItemNo.setSelected(true);
+			dtlsHandshakeMode = null;
+		}
+	}
+
+	@FXML
+	private void restartConnection() {
 		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
 		if (endpoint != null) {
 			try {
@@ -690,11 +739,18 @@ public class GUIController {
 	}
 
 	private void execute(Request request) {
-		Endpoint endpoint = getLocalEndpoint(request.getScheme());
+		String scheme = request.getScheme();
+		Endpoint endpoint = getLocalEndpoint(scheme);
 		if (endpoint != null) {
 			setCurrentRequest(request);
 			responseArea.setText("no response yet");
 			responseTitle.setText("Response: none");
+			if (dtlsHandshakeMode != null && CoAP.COAP_SECURE_URI_SCHEME.equals(scheme)) {
+				EndpointContext context = request.getDestinationContext();
+				context = MapBasedEndpointContext.addEntries(context, dtlsHandshakeMode);
+				request.setDestinationContext(context);
+				resetHandshakeType();
+			}
 			request.send(endpoint);
 			LOG.info("Sent request: {}", request);
 		}
