@@ -46,5 +46,5 @@ e.g. run `org.eclipse.californium.tools.GUIClientFX` as Java application.
 Usage
 -----
 
-e.g. java -jar cf-browser-*.jar
+e.g. java -jar cf-client-*.jar
 
