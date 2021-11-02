@@ -28,10 +28,10 @@ Using different versions of `java` and `javafx` may fail, ensure you use a prope
 
 Prebuild jars are available from the Eclipse Repository.
 
-[Eclipse Repository - cf-browser-3.0.0-RC2.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-browser/3.0.0-RC2/cf-browser-3.0.0-RC2.jar)
+[Eclipse Repository - cf-browser-3.0.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-browser/3.0.0/cf-browser-3.0.0.jar)
 
-Additional experimental TCP/TLS support (copy it to the same folder as the cf-browser-3.0.0-RC2.jar): 
-[Eclipse Repository - cf-cli-tcp-netty-3.0.0-RC2.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-cli-tcp-netty/3.0.0-RC2/cf-cli-tcp-netty-3.0.0-RC2.jar)
+Additional experimental TCP/TLS support (copy it to the same folder as the cf-browser-3.0.0.jar): 
+[Eclipse Repository - cf-cli-tcp-netty-3.0.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-cli-tcp-netty/3.0.0/cf-cli-tcp-netty-3.0.0.jar)
 
 ## Build
 
@@ -72,7 +72,7 @@ to prevent further updates, though the current recommended version is for java 1
 java-8:
 
 ```sh
-java -jar cf-browser-3.0.0-RC2.jar
+java -jar cf-browser-3.0.0.jar
 ```
 
 java-11 (module-path of Ubuntu 18.04):
