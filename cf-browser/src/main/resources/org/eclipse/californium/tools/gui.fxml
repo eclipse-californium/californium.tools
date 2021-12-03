@@ -55,6 +55,9 @@
 			<menus>
 				<Menu mnemonicParsing="false" text="File">
 					<items>
+						<CheckMenuItem fx:id="prettyJson"
+							mnemonicParsing="false" selected="true"
+							text="Pretty JSON" />
 						<MenuItem mnemonicParsing="false" onAction="#onExit"
 							text="Exit" />
 					</items>
