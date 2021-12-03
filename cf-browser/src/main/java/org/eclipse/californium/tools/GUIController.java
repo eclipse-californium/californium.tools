@@ -67,6 +67,10 @@ import org.eclipse.californium.tools.GUIClientFX.GuiClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.upokecenter.cbor.CBORObject;
 
 import ch.qos.logback.classic.Level;
@@ -117,8 +121,6 @@ public class GUIController {
 	@FXML
 	private TextArea logArea;
 	@FXML
-	private CheckMenuItem logEnabled;
-	@FXML
 	private Menu handshakeTypeMenu;
 	@FXML
 	private Menu messageTypeMenu;
@@ -126,6 +128,10 @@ public class GUIController {
 	private Menu contentTypeMenu;
 	@FXML
 	private Menu acceptMenu;
+	@FXML
+	private CheckMenuItem prettyJson;
+	@FXML
+	private CheckMenuItem logEnabled;
 	@FXML
 	private Menu logLevelMenu;
 	@FXML
@@ -799,11 +805,13 @@ public class GUIController {
 			// Display media type image icon and payload string
 			showContentType(contentFormat);
 			String text = "";
+			boolean pretty = false;
 			if (contentFormat == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
 				text = StringUtil.byteArray2HexString(payload, StringUtil.NO_SEPARATOR, 256);
 			} else if (contentFormat == MediaTypeRegistry.APPLICATION_CBOR) {
 				try {
 					text = CBORObject.DecodeFromBytes(payload).toString();
+					pretty = prettyJson.isSelected();
 				} catch (Throwable t) {
 					LOG.error("CBOR response:", t);
 					text = getErrorMessage("CBOR-error: ", t.getMessage(), payload, null);
@@ -822,6 +830,19 @@ public class GUIController {
 						LOG.error("Link response:", t);
 						text = getErrorMessage("Link-error: ", t.getMessage(), payload, null);
 					}
+				} else if (contentFormat == MediaTypeRegistry.APPLICATION_JSON) {
+					pretty = prettyJson.isSelected();
+				}
+			}
+			if (pretty) {
+				try {
+					GsonBuilder builder = new GsonBuilder();
+					builder.setPrettyPrinting();
+					Gson gson = builder.create();
+					JsonElement jsonElement = JsonParser.parseString(text);
+					text = gson.toJson(jsonElement);
+				} catch (Throwable t) {
+					LOG.error("Pretty JSON printing:", t);
 				}
 			}
 			responseArea.setText(text);
