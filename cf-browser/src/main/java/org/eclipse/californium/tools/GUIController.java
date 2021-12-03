@@ -67,6 +67,8 @@ import org.eclipse.californium.tools.GUIClientFX.GuiClientConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.upokecenter.cbor.CBORObject;
+
 import ch.qos.logback.classic.Level;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -801,14 +803,22 @@ public class GUIController {
 				image = new Image(imgIS);
 			}
 			mediaTypeView.setImage(image);
-			String text = response.getPayloadString();
-			if (format == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
-				Set<WebLink> webLinks = LinkFormat.parse(text);
-				StringBuilder links = new StringBuilder();
-				for (WebLink link : webLinks) {
-					links.append(link).append(StringUtil.lineSeparator());
+			String text = "";
+			if (format == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
+				text = StringUtil.byteArray2Hex(payload);
+			} else if (format == MediaTypeRegistry.APPLICATION_CBOR) {
+				CBORObject element = CBORObject.DecodeFromBytes(payload);
+				text = element.toString();
+			} else {
+				text = response.getPayloadString();
+				if (format == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
+					Set<WebLink> webLinks = LinkFormat.parse(text);
+					StringBuilder links = new StringBuilder();
+					for (WebLink link : webLinks) {
+						links.append(link).append(StringUtil.lineSeparator());
+					}
+					text = links.toString();
 				}
-				text = links.toString();
 			}
 			responseArea.setText(text);
 		}
