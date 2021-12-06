@@ -21,8 +21,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,7 +32,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +39,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
@@ -75,7 +75,6 @@ import com.upokecenter.cbor.CBORObject;
 
 import ch.qos.logback.classic.Level;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
@@ -147,7 +146,7 @@ public class GUIController {
 	@FXML
 	private TitledPane responseTitle;
 	@FXML
-	private TreeView<String> resourceTree;
+	private TreeView<PathElement> resourceTree;
 	@FXML
 	private ImageView mediaTypeView;
 	@FXML
@@ -472,28 +471,10 @@ public class GUIController {
 		request.addMessageObserver(new ResponsePrinter(request) {
 
 			public void onResponse(final Response response) {
-				LOG.info("Discovery, response: {}", response);
-				String text = response.getPayloadString();
-				Scanner scanner = new Scanner(text);
-				Pattern pattern = Pattern.compile("<");
-				scanner.useDelimiter(pattern);
-
-				final ObservableList<String> ress1 = FXCollections.observableArrayList();
-				final ArrayList<String> ress2 = new ArrayList<>();
-				ress1.add(coapHost);
-				ress2.add(".");
-
-				while (scanner.hasNext()) {
-					String part = scanner.next();
-					String res = part.split(">")[0];
-					LOG.info(res);
-					ress1.add(coapHost + res);
-					ress2.add(res);
-				}
-				scanner.close();
+				resetCurrentRequest(request);
 				Platform.runLater(() -> {
-					populateTree(ress2);
-					showResponse(response);
+					showEndpointContext(scheme, response.getSourceContext());
+					showResponse(response, true);
 				});
 			}
 		});
@@ -508,14 +489,14 @@ public class GUIController {
 
 	@FXML
 	private void onSelectResource() {
-		TreeItem<String> item = (TreeItem<String>) resourceTree.getSelectionModel().getSelectedItem();
+		TreeItem<PathElement> item = (TreeItem<PathElement>) resourceTree.getSelectionModel().getSelectedItem();
 		if (item == null) { // Handle case when no node in the tree is selected, just browsed into.
 			return;
 		}
-		StringBuilder path = new StringBuilder(item.getValue());
+		StringBuilder path = new StringBuilder(item.getValue().uriElement);
 		while (item.getParent() != null) {
 			item = item.getParent();
-			path.insert(0, item.getValue() + "/"); // Add slash separator to hierarchical paths.
+			path.insert(0, item.getValue().uriElement + "/"); // Add slash separator to hierarchical paths.
 		}
 		// Strip the extra leading slash added in the loop.
 		if (path.toString().startsWith("/")) {
@@ -685,19 +666,20 @@ public class GUIController {
 		return protocol + "//" + host;
 	}
 
-	private void populateTree(List<String> ress) {
-		TreeItem<String> rootItem = new TreeItem<>("/");
-		for (String res : ress) {
-			String[] parts = res.split("/");
-			TreeItem<String> cur = rootItem;
+	private void populateTree(Set<WebLink> links) {
+		TreeItem<PathElement> rootItem = new TreeItem<>(new PathElement("/"));
+		for (WebLink link : links) {
+
+			String[] parts = link.getURI().split("/");
+			TreeItem<PathElement> cur = rootItem;
 			for (int i = 1; i < parts.length; i++) {
-				TreeItem<String> search = new TreeItem<>(parts[i]);
-				ObservableList<TreeItem<String>> children = cur.getChildren();
-				FilteredList<TreeItem<String>> filteredChildren = children
-						.filtered(treeItem -> search.getValue().equals(treeItem.getValue()));
+				String part = parts[i];
+				ObservableList<TreeItem<PathElement>> children = cur.getChildren();
+				FilteredList<TreeItem<PathElement>> filteredChildren = children
+						.filtered(treeItem -> part.equals(treeItem.getValue().uriElement));
 				if (filteredChildren.size() == 0) {
-					children.add(search);
-					cur = search;
+					cur = new TreeItem<>(new PathElement(part));
+					children.add(cur);
 				} else {
 					cur = filteredChildren.get(0);
 				}
@@ -768,7 +750,7 @@ public class GUIController {
 		LOG.error(logMessage(request, ex));
 	}
 
-	private void showResponse(Response response) {
+	private void showResponse(Response response, boolean discover) {
 		if (observe != null) {
 			boolean show = observe.onResponse(response);
 			if (!response.isNotification()) {
@@ -780,6 +762,7 @@ public class GUIController {
 				return;
 			}
 		}
+
 		String type = response.isNotification() ? "Notification" : "Response";
 		LOG.info("Received {}: {}", type, response);
 		int size = response.getPayloadSize();
@@ -821,6 +804,9 @@ public class GUIController {
 				if (contentFormat == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
 					try {
 						Set<WebLink> webLinks = LinkFormat.parse(text);
+						if (discover) {
+							populateTree(webLinks);
+						}
 						StringBuilder links = new StringBuilder();
 						for (WebLink link : webLinks) {
 							links.append(link).append(StringUtil.lineSeparator());
@@ -924,9 +910,9 @@ public class GUIController {
 		private final AtomicBoolean connect = new AtomicBoolean();
 		private final AtomicBoolean reconnect = new AtomicBoolean();
 		private final AtomicInteger retransmission = new AtomicInteger();
-		private final Request request;
-		private final String scheme;
-		private final boolean dtls;
+		protected final Request request;
+		protected final String scheme;
+		protected final boolean dtls;
 
 		public ResponsePrinter(Request request) {
 			this.request = request;
@@ -1061,7 +1047,7 @@ public class GUIController {
 			resetCurrentRequest(request);
 			Platform.runLater(() -> {
 				showEndpointContext(scheme, response.getSourceContext());
-				showResponse(response);
+				showResponse(response, false);
 				updateUriBox(request.getURI());
 			});
 			super.onResponse(response);
@@ -1074,7 +1060,7 @@ public class GUIController {
 		public void onNotification(final Request request, final Response response) {
 			Platform.runLater(() -> {
 				if (observe != null && observe.matchRequest(request)) {
-					showResponse(response);
+					showResponse(response, false);
 				}
 			});
 		}
@@ -1094,5 +1080,26 @@ public class GUIController {
 			tmp.append("\n\t\t").append(element);
 		}
 		return tmp.toString();
+	}
+
+	private static class PathElement {
+		private String displayElement;
+		private String uriElement;
+
+		private PathElement(String uriElement) {
+			this.uriElement = uriElement;
+			String display = uriElement;
+			try {
+				display = URLDecoder.decode(uriElement, CoAP.UTF8_CHARSET.name());
+			} catch (UnsupportedEncodingException e) {
+				// UTF-8 must be supported, otherwise many functions will fail 
+			}
+			this.displayElement = display;
+		}
+
+		@Override
+		public String toString() {
+			return displayElement;
+		}
 	}
 }
