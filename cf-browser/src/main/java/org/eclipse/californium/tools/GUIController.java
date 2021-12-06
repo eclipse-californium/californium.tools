@@ -40,6 +40,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.eclipse.californium.cli.ClientInitializer;
+import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
+import org.eclipse.californium.core.WebLink;
+import org.eclipse.californium.core.coap.ClientObserveRelation;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
@@ -47,10 +51,6 @@ import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
-import org.eclipse.californium.cli.ClientInitializer;
-import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
-import org.eclipse.californium.core.WebLink;
-import org.eclipse.californium.core.coap.ClientObserveRelation;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.observe.NotificationListener;
@@ -780,44 +780,48 @@ public class GUIController {
 		byte[] payload = response.getPayload();
 		InetSocketAddress source = response.getSourceContext().getPeerAddress();
 		OptionSet optionSet = response.getOptions();
-		int format = optionSet.getContentFormat();
-		String mediaType = MediaTypeRegistry.toString(format);
+		int contentFormat = optionSet.getContentFormat();
+		String mediaType = MediaTypeRegistry.toString(contentFormat);
 		if (mediaType.startsWith("image")) {
 			// Display the image
-			Image img = new Image(new ByteArrayInputStream(payload));
-			mediaTypeView.setImage(img);
-			// Display the image uri if given, otherwise just the type
-			// and size
-			String uriPath = optionSet.getUriPathString();
-			if (uriPath != null && uriPath.length() > 0)
-				responseArea.setText(uriPath);
-			else
-				responseArea.setText(String.format("%s;size=%d", mediaType, size));
+			String meta = String.format("%s;size=%d", mediaType, size);
+			try {
+				Image img = new Image(new ByteArrayInputStream(payload));
+				mediaTypeView.setImage(img);
+				responseArea.setText(meta);
+			} catch (Throwable t) {
+				LOG.error("Image response:", t);
+				showContentType(contentFormat);
+				String text = getErrorMessage("Image-error: ", t.getMessage(), payload, meta);
+				responseArea.setText(text);
+			}
 		} else {
 			// Display media type image icon and payload string
-			Image image = blank;
-			String ext = MediaTypeRegistry.toFileExtension(format);
-			String path = "/org/eclipse/californium/tools/images/" + ext + ".png";
-			InputStream imgIS = getClass().getResourceAsStream(path);
-			if (imgIS != null) {
-				image = new Image(imgIS);
-			}
-			mediaTypeView.setImage(image);
+			showContentType(contentFormat);
 			String text = "";
-			if (format == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
-				text = StringUtil.byteArray2Hex(payload);
-			} else if (format == MediaTypeRegistry.APPLICATION_CBOR) {
-				CBORObject element = CBORObject.DecodeFromBytes(payload);
-				text = element.toString();
+			if (contentFormat == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
+				text = StringUtil.byteArray2HexString(payload, StringUtil.NO_SEPARATOR, 256);
+			} else if (contentFormat == MediaTypeRegistry.APPLICATION_CBOR) {
+				try {
+					text = CBORObject.DecodeFromBytes(payload).toString();
+				} catch (Throwable t) {
+					LOG.error("CBOR response:", t);
+					text = getErrorMessage("CBOR-error: ", t.getMessage(), payload, null);
+				}
 			} else {
 				text = response.getPayloadString();
-				if (format == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
-					Set<WebLink> webLinks = LinkFormat.parse(text);
-					StringBuilder links = new StringBuilder();
-					for (WebLink link : webLinks) {
-						links.append(link).append(StringUtil.lineSeparator());
+				if (contentFormat == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
+					try {
+						Set<WebLink> webLinks = LinkFormat.parse(text);
+						StringBuilder links = new StringBuilder();
+						for (WebLink link : webLinks) {
+							links.append(link).append(StringUtil.lineSeparator());
+						}
+						text = links.toString();
+					} catch (Throwable t) {
+						LOG.error("Link response:", t);
+						text = getErrorMessage("Link-error: ", t.getMessage(), payload, null);
 					}
-					text = links.toString();
 				}
 			}
 			responseArea.setText(text);
@@ -826,6 +830,27 @@ public class GUIController {
 				response.getCode(), response.getCode().name(), size, response.getMID(),
 				StringUtil.toDisplayString(source), mediaType);
 		responseTitle.setText(info);
+	}
+
+	private void showContentType(int contentFormat) {
+		Image image = blank;
+		String fileExtension = MediaTypeRegistry.toFileExtension(contentFormat);
+		String path = "/org/eclipse/californium/tools/images/" + fileExtension + ".png";
+		InputStream imgIS = getClass().getResourceAsStream(path);
+		if (imgIS != null) {
+			image = new Image(imgIS);
+		}
+		mediaTypeView.setImage(image);
+	}
+
+	private String getErrorMessage(String header, String error, byte[] payload, String extraInformation) {
+		StringBuilder builder = new StringBuilder();
+		builder.append(header).append(error).append(":").append(StringUtil.lineSeparator());
+		if (extraInformation != null && !extraInformation.isEmpty()) {
+			builder.append(extraInformation).append(StringUtil.lineSeparator());
+		}
+		builder.append(StringUtil.toDisplayString(payload, 256));
+		return builder.toString();
 	}
 
 	private void setCurrentRequest(Request request) {
