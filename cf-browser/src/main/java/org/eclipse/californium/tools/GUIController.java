@@ -71,6 +71,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+import com.upokecenter.cbor.CBOREncodeOptions;
 import com.upokecenter.cbor.CBORObject;
 
 import ch.qos.logback.classic.Level;
@@ -793,7 +794,8 @@ public class GUIController {
 				text = StringUtil.byteArray2HexString(payload, StringUtil.NO_SEPARATOR, 256);
 			} else if (contentFormat == MediaTypeRegistry.APPLICATION_CBOR) {
 				try {
-					text = CBORObject.DecodeFromBytes(payload).toString();
+					CBOREncodeOptions options = new CBOREncodeOptions("keepkeyorder=true");
+					text = CBORObject.DecodeFromBytes(payload, options).toString();
 					pretty = prettyJson.isSelected();
 				} catch (Throwable t) {
 					LOG.error("CBOR response:", t);
