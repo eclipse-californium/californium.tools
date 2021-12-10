@@ -37,6 +37,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -768,10 +769,10 @@ public class GUIController {
 		LOG.info("Received {}: {}", type, response);
 		int size = response.getPayloadSize();
 		byte[] payload = response.getPayload();
-		InetSocketAddress source = response.getSourceContext().getPeerAddress();
 		OptionSet optionSet = response.getOptions();
 		int contentFormat = optionSet.getContentFormat();
 		String mediaType = MediaTypeRegistry.toString(contentFormat);
+		boolean mediaTypeShown = false;
 		if (mediaType.startsWith("image")) {
 			// Display the image
 			String meta = String.format("%s;size=%d", mediaType, size);
@@ -787,7 +788,7 @@ public class GUIController {
 			}
 		} else {
 			// Display media type image icon and payload string
-			showContentType(contentFormat);
+			mediaTypeShown = showContentType(contentFormat);
 			String text = "";
 			boolean pretty = false;
 			if (contentFormat == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
@@ -835,13 +836,19 @@ public class GUIController {
 			}
 			responseArea.setText(text);
 		}
-		String info = String.format("%s: %s %s/%s;size=%d,mid=%d,source=%s,mediaType=%s", type, response.getType(),
-				response.getCode(), response.getCode().name(), size, response.getMID(),
-				StringUtil.toDisplayString(source), mediaType);
+		long rtt = TimeUnit.NANOSECONDS.toMillis(response.getApplicationRttNanos());
+		String info = String.format("%s: %s %s/%s, token=%s, mid=%d, rtt=%d[ms]", type, response.getType(),
+				response.getCode(), response.getCode().name(), response.getTokenString(), response.getMID(), rtt);
+		if (!mediaTypeShown) {
+			info += ", mediaType=" + mediaType;
+		}
+		if (response.getBytes() != null) {
+			info += ", " + response.getBytes().length + " bytes.";
+		}
 		responseTitle.setText(info);
 	}
 
-	private void showContentType(int contentFormat) {
+	private boolean showContentType(int contentFormat) {
 		Image image = blank;
 		String fileExtension = MediaTypeRegistry.toFileExtension(contentFormat);
 		String path = "/org/eclipse/californium/tools/images/" + fileExtension + ".png";
@@ -850,6 +857,7 @@ public class GUIController {
 			image = new Image(imgIS);
 		}
 		mediaTypeView.setImage(image);
+		return image != blank;
 	}
 
 	private String getErrorMessage(String header, String error, byte[] payload, String extraInformation) {
@@ -926,7 +934,8 @@ public class GUIController {
 		public void onReadyToSend() {
 			Platform.runLater(() -> {
 				StringBuilder text = new StringBuilder("Request:");
-				text.append(" token=").append(request.getTokenString());
+				text.append(" ").append(request.getType());
+				text.append(", token=").append(request.getTokenString());
 				text.append(", mid=").append(request.getMID());
 				if (request.getBytes() != null) {
 					text.append(", ").append(request.getBytes().length).append(" bytes.");
@@ -1094,7 +1103,7 @@ public class GUIController {
 			try {
 				display = URLDecoder.decode(uriElement, CoAP.UTF8_CHARSET.name());
 			} catch (UnsupportedEncodingException e) {
-				// UTF-8 must be supported, otherwise many functions will fail 
+				// UTF-8 must be supported, otherwise many functions will fail
 			}
 			this.displayElement = display;
 		}
