@@ -1,0 +1,39 @@
+maven/mavencentral/ch.qos.logback/logback-classic/1.2.8, EPL-1.0, approved, CQ13636
+maven/mavencentral/ch.qos.logback/logback-core/1.2.8, EPL-1.0, approved, CQ13635
+maven/mavencentral/com.github.peteroupc/numbers/1.8.0, CC0-1.0, approved, clearlydefined
+maven/mavencentral/com.google.code.gson/gson/2.8.8, Apache-2.0, approved, CQ23496
+maven/mavencentral/com.upokecenter/cbor/4.4.4, CC0-1.0, approved, #254
+maven/mavencentral/info.picocli/picocli/4.6.1, Apache-2.0, approved, clearlydefined
+maven/mavencentral/javax.annotation/javax.annotation-api/1.2, , approved, CQ15728
+maven/mavencentral/javax.servlet/javax.servlet-api/3.1.0, , approved, CQ7248
+maven/mavencentral/javax.websocket/javax.websocket-api/1.0, CDDL-1.0, approved, CQ7351
+maven/mavencentral/org.eclipse.californium/californium-core/3.1.0-20211223.075442-51, , approved, science.californium
+maven/mavencentral/org.eclipse.californium/cf-cli/3.1.0-20211223.075442-51, , approved, science.californium
+maven/mavencentral/org.eclipse.californium/element-connector/3.1.0-20211223.075442-51, , approved, science.californium
+maven/mavencentral/org.eclipse.californium/scandium/3.1.0-20211223.075442-51, , approved, science.californium
+maven/mavencentral/org.eclipse.jetty.websocket/javax-websocket-client-impl/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/javax-websocket-server-impl/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-api/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-client/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-common/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-server/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-servlet/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-annotations/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-http/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-io/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-jndi/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-plus/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-security/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-server/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-servlet/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-util/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-webapp/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty/jetty-xml/9.2.7.v20150116, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.openjfx/javafx-base/14, NOASSERTION, restricted, clearlydefined
+maven/mavencentral/org.openjfx/javafx-controls/14, NOASSERTION, restricted, clearlydefined
+maven/mavencentral/org.openjfx/javafx-fxml/14, NOASSERTION, restricted, clearlydefined
+maven/mavencentral/org.openjfx/javafx-graphics/14, NOASSERTION, restricted, clearlydefined
+maven/mavencentral/org.ow2.asm/asm-commons/5.0.1, BSD-2-Clause, approved, CQ8129
+maven/mavencentral/org.ow2.asm/asm-tree/5.0.1, BSD-2-Clause, approved, CQ8129
+maven/mavencentral/org.ow2.asm/asm/5.0.1, BSD-2-Clause, approved, CQ9714
+maven/mavencentral/org.slf4j/slf4j-api/1.7.30, MIT, approved, CQ13368
