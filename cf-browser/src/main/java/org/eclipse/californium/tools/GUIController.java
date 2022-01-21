@@ -476,7 +476,7 @@ public class GUIController {
 				resetCurrentRequest(request);
 				Platform.runLater(() -> {
 					showEndpointContext(scheme, response.getSourceContext());
-					showResponse(response, true);
+					showResponse(response, null);
 				});
 			}
 		});
@@ -668,10 +668,52 @@ public class GUIController {
 		return protocol + "//" + host;
 	}
 
-	private void populateTree(Set<WebLink> links) {
-		TreeItem<PathElement> rootItem = new TreeItem<>(new PathElement("/"));
-		for (WebLink link : links) {
+	private void populateTree(Set<WebLink> links, boolean clear) {
+		boolean freshTree = false;
+		TreeItem<PathElement> rootItem = resourceTree.getRoot();
+		String currentHost = getHost();
+		if (clear || rootItem == null) {
+			rootItem = new TreeItem<>(new PathElement("/"));
+			freshTree = true;
+		}
+		if (freshTree || coapHost == null) {
+			coapHost = currentHost;
+		} else if (!coapHost.equals(currentHost)){
+			return;
+		}
+		amendTree(rootItem, links);
+		if (freshTree) {
+			rootItem.setExpanded(true);
+			resourceTree.setRoot(rootItem);
+		}
+	}
 
+	private void removeChildren(List<String> path) {
+		String currentHost = getHost();
+		if (coapHost != null && coapHost.equals(currentHost)){
+			TreeItem<PathElement> rootItem = resourceTree.getRoot();
+			TreeItem<PathElement> cur = rootItem;
+			for (int i = 0; i < path.size(); i++) {
+				String part = path.get(i);
+				ObservableList<TreeItem<PathElement>> children = cur.getChildren();
+				FilteredList<TreeItem<PathElement>> filteredChildren = children
+						.filtered(treeItem -> part.equals(treeItem.getValue().displayElement));
+				if (filteredChildren.size() == 0) {
+					cur = null;
+					break;
+				} else {
+					cur = filteredChildren.get(0);
+				}
+			}
+			if (cur != null) {
+				ObservableList<TreeItem<PathElement>> children = cur.getChildren();
+				children.clear();
+			}
+		}
+	}
+
+	private void amendTree(TreeItem<PathElement> rootItem, Set<WebLink> links) {
+		for (WebLink link : links) {
 			String[] parts = link.getURI().split("/");
 			TreeItem<PathElement> cur = rootItem;
 			for (int i = 1; i < parts.length; i++) {
@@ -687,8 +729,6 @@ public class GUIController {
 				}
 			}
 		}
-		rootItem.setExpanded(true);
-		resourceTree.setRoot(rootItem);
 	}
 
 	/**
@@ -752,7 +792,7 @@ public class GUIController {
 		LOG.error(logMessage(request, ex));
 	}
 
-	private void showResponse(Response response, boolean discover) {
+	private void showResponse(Response response, List<String> path) {
 		if (observe != null) {
 			boolean show = observe.onResponse(response);
 			if (!response.isNotification()) {
@@ -807,9 +847,10 @@ public class GUIController {
 				if (contentFormat == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
 					try {
 						Set<WebLink> webLinks = LinkFormat.parse(text);
-						if (discover) {
-							populateTree(webLinks);
+						if (path != null) {
+							removeChildren(path);
 						}
+						populateTree(webLinks, path == null);
 						StringBuilder links = new StringBuilder();
 						for (WebLink link : webLinks) {
 							links.append(link).append(StringUtil.lineSeparator());
@@ -1058,7 +1099,7 @@ public class GUIController {
 			resetCurrentRequest(request);
 			Platform.runLater(() -> {
 				showEndpointContext(scheme, response.getSourceContext());
-				showResponse(response, false);
+				showResponse(response, request.getOptions().getUriPath());
 				updateUriBox(request.getURI());
 			});
 			super.onResponse(response);
@@ -1071,7 +1112,7 @@ public class GUIController {
 		public void onNotification(final Request request, final Response response) {
 			Platform.runLater(() -> {
 				if (observe != null && observe.matchRequest(request)) {
-					showResponse(response, false);
+					showResponse(response, request.getOptions().getUriPath());
 				}
 			});
 		}
