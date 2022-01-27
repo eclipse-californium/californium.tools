@@ -473,10 +473,11 @@ public class GUIController {
 		request.addMessageObserver(new ResponsePrinter(request) {
 
 			public void onResponse(final Response response) {
-				resetCurrentRequest(request);
 				Platform.runLater(() -> {
-					showEndpointContext(scheme, response.getSourceContext());
-					showResponse(response, null);
+					if (resetCurrentRequest(request)) {
+						showEndpointContext(scheme, response.getSourceContext());
+						showResponse(response, null);
+					}
 				});
 			}
 		});
@@ -678,7 +679,7 @@ public class GUIController {
 		}
 		if (freshTree || coapHost == null) {
 			coapHost = currentHost;
-		} else if (!coapHost.equals(currentHost)){
+		} else if (!coapHost.equals(currentHost)) {
 			return;
 		}
 		amendTree(rootItem, links);
@@ -690,7 +691,7 @@ public class GUIController {
 
 	private void removeChildren(List<String> path) {
 		String currentHost = getHost();
-		if (coapHost != null && coapHost.equals(currentHost)){
+		if (coapHost != null && coapHost.equals(currentHost)) {
 			TreeItem<PathElement> rootItem = resourceTree.getRoot();
 			TreeItem<PathElement> cur = rootItem;
 			for (int i = 0; i < path.size(); i++) {
@@ -924,11 +925,19 @@ public class GUIController {
 		}
 	}
 
-	private void resetCurrentRequest(Request request) {
+	private boolean resetCurrentRequest(Request request) {
 		synchronized (this) {
-			if (current == request) {
+			boolean reset = current == request;
+			if (reset) {
 				current = null;
 			}
+			return reset;
+		}
+	}
+
+	private boolean isCurrentRequest(Request request) {
+		synchronized (this) {
+			return current == request;
 		}
 	}
 
@@ -974,14 +983,16 @@ public class GUIController {
 		@Override
 		public void onReadyToSend() {
 			Platform.runLater(() -> {
-				StringBuilder text = new StringBuilder("Request:");
-				text.append(" ").append(request.getType());
-				text.append(", token=").append(request.getTokenString());
-				text.append(", mid=").append(request.getMID());
-				if (request.getBytes() != null) {
-					text.append(", ").append(request.getBytes().length).append(" bytes.");
+				if (isCurrentRequest(request)) {
+					StringBuilder text = new StringBuilder("Request:");
+					text.append(" ").append(request.getType());
+					text.append(", token=").append(request.getTokenString());
+					text.append(", mid=").append(request.getMID());
+					if (request.getBytes() != null) {
+						text.append(", ").append(request.getBytes().length).append(" bytes.");
+					}
+					requestTitle.setText(text.toString());
 				}
-				requestTitle.setText(text.toString());
 			});
 			super.onReadyToSend();
 		}
@@ -990,10 +1001,12 @@ public class GUIController {
 		public void onConnecting() {
 			connect.set(true);
 			Platform.runLater(() -> {
-				LOG.info("connecting");
-				mediaTypeView.setImage(blank);
-				resetConnectionTitle();
-				connectionArea.setText("Connecting ...");
+				if (isCurrentRequest(request)) {
+					LOG.info("connecting");
+					mediaTypeView.setImage(blank);
+					resetConnectionTitle();
+					connectionArea.setText("Connecting ...");
+				}
 			});
 			super.onConnecting();
 		}
@@ -1002,63 +1015,70 @@ public class GUIController {
 		public void onRetransmission() {
 			final int retry = retransmission.incrementAndGet();
 			if (dtls && !connect.get() && !reconnect.get() && retry == 2) {
-				EndpointContext destinationContext = request.getEffectiveDestinationContext();
-				String mode = destinationContext.getString(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
-				if (mode == null) {
-					EndpointContext probeContext = MapBasedEndpointContext.addEntries(destinationContext,
-							DtlsEndpointContext.ATTRIBUTE_HANDSHAKE_MODE_PROBE);
-					request.setEffectiveDestinationContext(probeContext);
-					reconnect.set(true);
+				if (isCurrentRequest(request)) {
+					EndpointContext destinationContext = request.getEffectiveDestinationContext();
+					String mode = destinationContext.getString(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
+					if (mode == null) {
+						EndpointContext probeContext = MapBasedEndpointContext.addEntries(destinationContext,
+								DtlsEndpointContext.ATTRIBUTE_HANDSHAKE_MODE_PROBE);
+						request.setEffectiveDestinationContext(probeContext);
+						reconnect.set(true);
+					}
 				}
 			}
 			Platform.runLater(() -> {
-				LOG.info("retransmission");
-				mediaTypeView.setImage(blank);
-				String text = scheme + ": retransmission " + retry;
-				if (reconnect.get()) {
-					text += " (reconnect)";
+				if (isCurrentRequest(request)) {
+					LOG.info("retransmission");
+					mediaTypeView.setImage(blank);
+					String text = scheme + ": retransmission " + retry;
+					if (reconnect.get()) {
+						text += " (reconnect)";
+					}
+					responseArea.setText(text);
+					responseTitle.setText("Response:");
 				}
-				responseArea.setText(text);
-				responseTitle.setText("Response:");
 			});
 			super.onRetransmission();
 		}
 
 		@Override
 		public void onReject() {
-			resetCurrentRequest(request);
 			Platform.runLater(() -> {
-				LOG.info("rejected");
-				mediaTypeView.setImage(blank);
-				responseArea.setText("Rejected by other peer.");
-				String info = String.format("RST: mid=%d,source=%s", request.getMID(),
-						StringUtil.toDisplayString(request.getDestinationContext().getPeerAddress()));
-				responseTitle.setText(info);
+				if (resetCurrentRequest(request)) {
+					LOG.info("rejected");
+					mediaTypeView.setImage(blank);
+					responseArea.setText("Rejected by other peer.");
+					String info = String.format("RST: mid=%d,source=%s", request.getMID(),
+							StringUtil.toDisplayString(request.getDestinationContext().getPeerAddress()));
+					responseTitle.setText(info);
+				}
 			});
 			super.onReject();
 		}
 
 		@Override
 		public void onTimeout() {
-			resetCurrentRequest(request);
 			Platform.runLater(() -> {
-				LOG.info("timeout");
-				mediaTypeView.setImage(blank);
-				responseArea.setText("Timeout.");
-				responseTitle.setText("Response:");
+				if (resetCurrentRequest(request)) {
+					LOG.info("timeout");
+					mediaTypeView.setImage(blank);
+					responseArea.setText("Timeout.");
+					responseTitle.setText("Response:");
+				}
 			});
 			super.onTimeout();
 		}
 
 		@Override
 		public void onCancel() {
-			resetCurrentRequest(request);
 			Platform.runLater(() -> {
-				LOG.info("cancel request");
-				responseArea.setText("");
-				responseTitle.setText("Response: Canceled");
-				if (connect.get()) {
-					connectionArea.setText("");
+				if (resetCurrentRequest(request)) {
+					LOG.info("cancel request");
+					responseArea.setText("");
+					responseTitle.setText("Response: Canceled");
+					if (connect.get()) {
+						connectionArea.setText("");
+					}
 				}
 			});
 			super.onCancel();
@@ -1066,18 +1086,19 @@ public class GUIController {
 
 		@Override
 		public void onSendError(final Throwable error) {
-			resetCurrentRequest(request);
 			Platform.runLater(() -> {
-				LOG.info("send error", error);
-				mediaTypeView.setImage(blank);
-				String text = error.getMessage();
-				if (text == null) {
-					text = error.getClass().getSimpleName();
-				}
-				responseArea.setText(text);
-				responseTitle.setText("Response: Send Error");
-				if (connect.get()) {
-					connectionArea.setText("");
+				if (resetCurrentRequest(request)) {
+					LOG.info("send error", error);
+					mediaTypeView.setImage(blank);
+					String text = error.getMessage();
+					if (text == null) {
+						text = error.getClass().getSimpleName();
+					}
+					responseArea.setText(text);
+					responseTitle.setText("Response: Send Error");
+					if (connect.get()) {
+						connectionArea.setText("");
+					}
 				}
 			});
 			super.onSendError(error);
@@ -1088,7 +1109,9 @@ public class GUIController {
 			if (connect.get()) {
 				connectionTime.put(endpointContext.getPeerAddress(), new Date());
 				Platform.runLater(() -> {
-					showEndpointContext(scheme, endpointContext);
+					if (isCurrentRequest(request)) {
+						showEndpointContext(scheme, endpointContext);
+					}
 				});
 			}
 			super.onContextEstablished(endpointContext);
@@ -1096,11 +1119,12 @@ public class GUIController {
 
 		@Override
 		public void onResponse(final Response response) {
-			resetCurrentRequest(request);
 			Platform.runLater(() -> {
-				showEndpointContext(scheme, response.getSourceContext());
-				showResponse(response, request.getOptions().getUriPath());
-				updateUriBox(request.getURI());
+				if (resetCurrentRequest(request)) {
+					showEndpointContext(scheme, response.getSourceContext());
+					showResponse(response, request.getOptions().getUriPath());
+					updateUriBox(request.getURI());
+				}
 			});
 			super.onResponse(response);
 		}
@@ -1111,8 +1135,10 @@ public class GUIController {
 		@Override
 		public void onNotification(final Request request, final Response response) {
 			Platform.runLater(() -> {
-				if (observe != null && observe.matchRequest(request)) {
-					showResponse(response, request.getOptions().getUriPath());
+				if (isCurrentRequest(request)) {
+					if (observe != null && observe.matchRequest(request)) {
+						showResponse(response, request.getOptions().getUriPath());
+					}
 				}
 			});
 		}
