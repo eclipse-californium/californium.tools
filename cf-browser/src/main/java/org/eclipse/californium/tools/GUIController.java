@@ -168,7 +168,7 @@ public class GUIController {
 	private RadioMenuItem handshakeTypeMenuItemNo;
 
 	private String coapHost;
-	private int accept = MediaTypeRegistry.TEXT_PLAIN;
+	private int accept = MediaTypeRegistry.UNDEFINED;
 	private int contentType = MediaTypeRegistry.TEXT_PLAIN;
 	private boolean confirmed = true;
 
@@ -302,6 +302,7 @@ public class GUIController {
 				radio.setSelected(true);
 			}
 			List<Integer> allMediaTypes = new ArrayList<Integer>(MediaTypeRegistry.getAllMediaTypes());
+			allMediaTypes.add(MediaTypeRegistry.UNDEFINED);
 			allMediaTypes.sort(null);
 			for (int type : allMediaTypes) {
 				String name = MediaTypeRegistry.toString(type);
