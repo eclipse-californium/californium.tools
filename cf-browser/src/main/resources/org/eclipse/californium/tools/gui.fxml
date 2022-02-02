@@ -253,6 +253,9 @@
 										<Button mnemonicParsing="false" fx:id="deleteButton"
 											onAction="#deleteRequest" prefWidth="80.0" text="DELETE"
 											HBox.hgrow="ALWAYS" />
+										<Button mnemonicParsing="false" fx:id="pingButton"
+											onAction="#pingRequest" prefWidth="80.0" text="PING"
+											HBox.hgrow="ALWAYS" />
 										<Button mnemonicParsing="false" fx:id="observeButton"
 											onAction="#observeRequest" prefWidth="80.0" text="OBSERVE"
 											HBox.hgrow="ALWAYS" />
