@@ -366,40 +366,38 @@ public class GUIController implements NotificationListener {
 		resetConnectionTitle();
 	}
 
-	private Endpoint getLocalEndpoint(String uri) {
-		return getLocalEndpoint(uri, false);
+	private Endpoint getLocalEndpoint(String scheme) {
+		return getLocalEndpoint(scheme, false);
 	}
 
-	private Endpoint getLocalEndpoint(String uri, boolean reset) {
-		String scheme = CoAP.getSchemeFromUri(uri);
-		if (scheme == null) {
-			scheme = uri;
-		}
+	private Endpoint getLocalEndpoint(String scheme, boolean reset) {
 		Endpoint endpoint = null;
-		try {
-			endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
-			if (reset) {
-				endpoint.stop();
-				endpoint.destroy();
-				throw new IllegalStateException("reset endpoint!");
-			}
-		} catch (IllegalStateException e) {
-			clientConfig.uri = uri == scheme ? scheme + CoAP.URI_SCHEME_SEPARATOR : uri;
-			if (clientConfig.authenticationModes.isEmpty()) {
-				clientConfig.authenticationModes.add(AuthenticationMode.PSK);
-			}
-			endpoint = ClientInitializer.createEndpoint(clientConfig, null);
-			EndpointManager.getEndpointManager().setDefaultEndpoint(endpoint);
-		} catch (RuntimeException e) {
-		}
-		synchronized (this) {
-			if (this.endpoint != endpoint) {
-				if (this.endpoint != null) {
-					this.endpoint.removeNotificationListener(this);
+		if (CoAP.isSupportedScheme(scheme)) {
+			try {
+				endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(scheme);
+				if (reset) {
+					endpoint.stop();
+					endpoint.destroy();
+					throw new IllegalStateException("reset endpoint!");
 				}
-				this.endpoint = endpoint;
-				if (this.endpoint != null) {
-					this.endpoint.addNotificationListener(this);
+			} catch (IllegalStateException e) {
+				clientConfig.uri = scheme + CoAP.URI_SCHEME_SEPARATOR;
+				if (clientConfig.authenticationModes.isEmpty()) {
+					clientConfig.authenticationModes.add(AuthenticationMode.PSK);
+				}
+				endpoint = ClientInitializer.createEndpoint(clientConfig, null);
+				EndpointManager.getEndpointManager().setDefaultEndpoint(endpoint);
+			} catch (RuntimeException e) {
+			}
+			synchronized (this) {
+				if (this.endpoint != endpoint) {
+					if (this.endpoint != null) {
+						this.endpoint.removeNotificationListener(this);
+					}
+					this.endpoint = endpoint;
+					if (this.endpoint != null) {
+						this.endpoint.addNotificationListener(this);
+					}
 				}
 			}
 		}
@@ -408,7 +406,7 @@ public class GUIController implements NotificationListener {
 
 	private void resetConnectionTitle() {
 		StringBuilder title = new StringBuilder("Connection:");
-		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
+		Endpoint endpoint = getLocalEndpoint(getScheme());
 		if (endpoint != null) {
 			title.append(" from ").append(StringUtil.toString(endpoint.getAddress()));
 		}
@@ -462,7 +460,7 @@ public class GUIController implements NotificationListener {
 		if (observerRelation != null) {
 			observerRelation.proactiveCancel();
 		} else {
-			Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
+			Endpoint endpoint = getLocalEndpoint(getScheme());
 			if (endpoint != null) {
 				Request request = Request.newGet();
 				request.getOptions().setObserve(0);
@@ -477,9 +475,15 @@ public class GUIController implements NotificationListener {
 
 	@FXML
 	private void discoveryRequest() {
-		Request request = new Request(CoAP.Code.GET);
 		coapHost = getHost();
-		request.addMessageObserver(new ResponsePrinter(request) {
+		final Request request = Request.newGet();
+		if (clientConfig.proxy != null) {
+			request.setDestinationContext(new AddressEndpointContext(clientConfig.proxy.destination));
+			if (clientConfig.proxy.scheme != null) {
+				request.getOptions().setProxyScheme(clientConfig.proxy.scheme);
+			}
+		}
+		request.addMessageObserver(new ResponsePrinter(request, CoAP.getSchemeFromUri(coapHost)) {
 
 			public void onResponse(final Response response) {
 				Platform.runLater(() -> {
@@ -490,13 +494,8 @@ public class GUIController implements NotificationListener {
 				});
 			}
 		});
-		try {
-			request.setURI(coapHost + "/.well-known/core");
-			LOG.info("Begin discovery, host={}", coapHost);
-			execute(request);
-		} catch (Exception ex) {
-			logException(request, ex);
-		}
+		LOG.info("Begin discovery, host={}", coapHost);
+		execute(request, coapHost + "/.well-known/core");
 	}
 
 	@FXML
@@ -522,7 +521,7 @@ public class GUIController implements NotificationListener {
 
 	@FXML
 	private void resetConnection() {
-		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem(), true);
+		Endpoint endpoint = getLocalEndpoint(getScheme(), true);
 		if (endpoint != null) {
 			connectionTime.clear();
 			resetConnectionTitle();
@@ -554,7 +553,7 @@ public class GUIController implements NotificationListener {
 
 	@FXML
 	private void restartConnection() {
-		Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
+		Endpoint endpoint = getLocalEndpoint(getScheme());
 		if (endpoint != null) {
 			try {
 				endpoint.stop();
@@ -670,12 +669,20 @@ public class GUIController implements NotificationListener {
 		}
 	}
 
+	private String getScheme() {
+		return CoAP.getSchemeFromUri(uriBox.getSelectionModel().getSelectedItem());
+	}
+
 	private String getHost() {
 		String uri = uriBox.getSelectionModel().getSelectedItem();
 		StringTokenizer st = new StringTokenizer(uri, "/");
 		String protocol = st.nextToken();
 		String host = st.nextToken();
 		return protocol + "//" + host;
+	}
+
+	private String getUri() {
+		return uriBox.getSelectionModel().getSelectedItem().replace(" ", "%20");
 	}
 
 	private void populateTree(Set<WebLink> links, boolean clear) {
@@ -748,18 +755,16 @@ public class GUIController implements NotificationListener {
 	 * 
 	 * @param request - the coap request type
 	 */
-	private void performRequest(Request request) {
-		if (clientConfig.proxy != null) {
-			request.setDestinationContext(new AddressEndpointContext(clientConfig.proxy.destination));
-			if (clientConfig.proxy.scheme != null) {
-				request.getOptions().setProxyScheme(clientConfig.proxy.scheme);
-			}
-		}
-		String uri = uriBox.getSelectionModel().getSelectedItem();
-		uri = uri.replace(" ", "%20");
+	private void performRequest(final Request request) {
 		try {
-			request.setURI(uri);
-			request.addMessageObserver(new ResponsePrinter(request));
+			final String uri = getUri();
+			if (clientConfig.proxy != null) {
+				request.setDestinationContext(new AddressEndpointContext(clientConfig.proxy.destination));
+				if (clientConfig.proxy.scheme != null) {
+					request.getOptions().setProxyScheme(clientConfig.proxy.scheme);
+				}
+			}
+			request.addMessageObserver(new ResponsePrinter(request, CoAP.getSchemeFromUri(uri)));
 			if (request.isIntendedPayload()) {
 				applyRequestContent();
 				String text = requestArea.getText();
@@ -774,28 +779,44 @@ public class GUIController implements NotificationListener {
 				request.getOptions().setAccept(accept);
 			}
 			request.setConfirmable(confirmed);
-			execute(request);
+			execute(request, uri);
 		} catch (Exception ex) {
 			logException(request, ex);
 		}
 	}
 
-	private void execute(Request request) {
-		String scheme = request.getScheme();
-		Endpoint endpoint = getLocalEndpoint(scheme);
-		if (endpoint != null) {
-			setCurrentRequest(request, null);
-			responseArea.setText("no response yet");
-			responseTitle.setText("Response: none");
-			if (dtlsHandshakeMode != null && CoAP.COAP_SECURE_URI_SCHEME.equals(scheme)) {
-				EndpointContext context = request.getDestinationContext();
-				context = MapBasedEndpointContext.addEntries(context, dtlsHandshakeMode);
-				request.setDestinationContext(context);
-				resetHandshakeType();
+	private void execute(final Request request, final String uri) {
+		timer.execute(() -> {
+			try {
+				// resolve URI outside the UI thread
+				request.setURI(uri);
+				Platform.runLater(() -> {
+					// finally send request (again) inside the UI thread
+					try {
+						String scheme = request.getScheme();
+						Endpoint endpoint = getLocalEndpoint(scheme);
+						if (endpoint != null) {
+							setCurrentRequest(request, null);
+							responseTitle.setText("Response: none");
+							responseArea.setText("");
+							responseArea.setPromptText("No response yet ...");
+							if (dtlsHandshakeMode != null && CoAP.COAP_SECURE_URI_SCHEME.equals(scheme)) {
+								EndpointContext context = request.getDestinationContext();
+								context = MapBasedEndpointContext.addEntries(context, dtlsHandshakeMode);
+								request.setDestinationContext(context);
+								resetHandshakeType();
+							}
+							request.send(endpoint);
+							LOG.info("Sent request: {}", request);
+						}
+					} catch (Exception ex) {
+						logException(request, ex);
+					}
+				});
+			} catch (Exception ex) {
+				logException(request, ex);
 			}
-			request.send(endpoint);
-			LOG.info("Sent request: {}", request);
-		}
+		});
 	}
 
 	private void logException(Request request, Exception ex) {
@@ -1019,9 +1040,9 @@ public class GUIController implements NotificationListener {
 		protected final String scheme;
 		protected final boolean dtls;
 
-		public ResponsePrinter(Request request) {
+		public ResponsePrinter(Request request, String scheme) {
 			this.request = request;
-			this.scheme = request.getScheme();
+			this.scheme = scheme;
 			this.dtls = CoAP.isSecureScheme(scheme) && !CoAP.isTcpScheme(scheme);
 		}
 
