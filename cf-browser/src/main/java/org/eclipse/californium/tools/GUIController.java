@@ -104,7 +104,7 @@ import javafx.stage.Stage;
 /**
  * The JavaFX controller for the gui.fxml template
  */
-public class GUIController {
+public class GUIController implements NotificationListener {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
 	public static final String DEFAULT_URI = "coap://localhost:5683";
@@ -176,13 +176,14 @@ public class GUIController {
 	private Image blank;
 
 	private Request current;
-	private NotificationPrinter notificationPrinter;
+
+	private ResponsePrinter currentResponsePrinter;
+
+	private ClientObserveRelation currentObserveRelation;
 
 	private Attributes dtlsHandshakeMode;
 
 	private Endpoint endpoint;
-
-	private ClientObserveRelation observe;
 
 	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Timer#"));
 
@@ -359,7 +360,6 @@ public class GUIController {
 		imgIS = getClass().getResourceAsStream("/org/eclipse/californium/tools/images/blank.png");
 		blank = new Image(imgIS);
 
-		notificationPrinter = new NotificationPrinter();
 		initializeRootLoggerLevel();
 		initializeContentTypeMenu(contentTypeMenu);
 		initializeContentTypeMenu(acceptMenu);
@@ -395,11 +395,11 @@ public class GUIController {
 		synchronized (this) {
 			if (this.endpoint != endpoint) {
 				if (this.endpoint != null) {
-					this.endpoint.removeNotificationListener(notificationPrinter);
+					this.endpoint.removeNotificationListener(this);
 				}
 				this.endpoint = endpoint;
 				if (this.endpoint != null) {
-					this.endpoint.addNotificationListener(notificationPrinter);
+					this.endpoint.addNotificationListener(this);
 				}
 			}
 		}
@@ -421,6 +421,15 @@ public class GUIController {
 		putButton.setDisable(disable);
 		deleteButton.setDisable(disable);
 		discoverButton.setDisable(disable);
+	}
+
+	private void setNormalButtonMode() {
+		Platform.runLater(() -> {
+			if (getObserverRelation() == null) {
+				observeButton.setText("OBSERVE");
+				setButtonsDisable(false);
+			}
+		});
 	}
 
 	@FXML
@@ -449,17 +458,16 @@ public class GUIController {
 
 	@FXML
 	private void observeRequest() {
-		if (observe != null) {
-			observe.proactiveCancel();
-			observeButton.setText("OBSERVE");
-			setButtonsDisable(false);
-			observe = null;
+		ClientObserveRelation observerRelation = getObserverRelation();
+		if (observerRelation != null) {
+			observerRelation.proactiveCancel();
 		} else {
 			Endpoint endpoint = getLocalEndpoint(uriBox.getSelectionModel().getSelectedItem());
 			if (endpoint != null) {
 				Request request = Request.newGet();
 				request.getOptions().setObserve(0);
-				observe = new ClientObserveRelation(request, endpoint, timer);
+				observerRelation = new ClientObserveRelation(request, endpoint, timer);
+				setCurrentRequest(request, observerRelation);
 				observeButton.setText("CANCEL");
 				setButtonsDisable(true);
 				performRequest(request);
@@ -776,7 +784,7 @@ public class GUIController {
 		String scheme = request.getScheme();
 		Endpoint endpoint = getLocalEndpoint(scheme);
 		if (endpoint != null) {
-			setCurrentRequest(request);
+			setCurrentRequest(request, null);
 			responseArea.setText("no response yet");
 			responseTitle.setText("Response: none");
 			if (dtlsHandshakeMode != null && CoAP.COAP_SECURE_URI_SCHEME.equals(scheme)) {
@@ -795,17 +803,6 @@ public class GUIController {
 	}
 
 	private void showResponse(Response response, List<String> path) {
-		if (observe != null) {
-			boolean show = observe.onResponse(response);
-			if (!response.isNotification()) {
-				LOG.info("CoAP-server stopped observe!");
-				observeButton.setText("OBSERVE");
-				setButtonsDisable(false);
-				observe = null;
-			} else if (!show) {
-				return;
-			}
-		}
 
 		String type = response.isNotification() ? "Notification" : "Response";
 		LOG.info("Received {}: {}", type, response);
@@ -879,9 +876,12 @@ public class GUIController {
 			}
 			responseArea.setText(text);
 		}
-		long rtt = TimeUnit.NANOSECONDS.toMillis(response.getApplicationRttNanos());
-		String info = String.format("%s: %s %s/%s, token=%s, mid=%d, rtt=%d[ms]", type, response.getType(),
-				response.getCode(), response.getCode().name(), response.getTokenString(), response.getMID(), rtt);
+		String info = String.format("%s: %s %s/%s, token=%s, mid=%d", type, response.getType(), response.getCode(),
+				response.getCode().name(), response.getTokenString(), response.getMID());
+		Long rtt = response.getApplicationRttNanos();
+		if (rtt != null) {
+			info += String.format(", rtt=%d[ms]", TimeUnit.NANOSECONDS.toMillis(rtt));
+		}
 		if (!mediaTypeShown) {
 			info += ", mediaType=" + mediaType;
 		}
@@ -913,12 +913,46 @@ public class GUIController {
 		return builder.toString();
 	}
 
-	private void setCurrentRequest(Request request) {
-		Request previous = null;
+	@Override
+	public void onNotification(Request request, Response response) {
+		LOG.info("Received notification {}", response);
+		ClientObserveRelation observerRelation;
+		ResponsePrinter printer;
 		synchronized (this) {
-			if (current != request) {
+			observerRelation = currentObserveRelation;
+			printer = currentResponsePrinter;
+		}
+		if (printer != null && observerRelation != null && observerRelation.matchRequest(request)) {
+			printer.onResponse(response);
+		} else {
+			LOG.info("notification not matching current observe");
+		}
+	}
+
+	private ClientObserveRelation getObserverRelation() {
+		synchronized (this) {
+			return currentObserveRelation;
+		}
+	}
+
+	private void setCurrentRequest(Request request, ClientObserveRelation observe) {
+		Request previous = null;
+		ClientObserveRelation previousObserve = null;
+		synchronized (this) {
+			if (!isCurrentRequest(request)) {
 				previous = current;
 				current = request;
+				if (currentObserveRelation != observe) {
+					previousObserve = currentObserveRelation;
+					currentObserveRelation = observe;
+				}
+			}
+			currentResponsePrinter = request.getMessageObserver(ResponsePrinter.class);
+		}
+		if (previousObserve != null) {
+			previousObserve.proactiveCancel();
+			if (observe == null) {
+				setNormalButtonMode();
 			}
 		}
 		if (previous != null) {
@@ -927,13 +961,23 @@ public class GUIController {
 	}
 
 	private boolean resetCurrentRequest(Request request) {
+		boolean reset;
+		boolean ui = false;
 		synchronized (this) {
-			boolean reset = current == request;
+			reset = isCurrentRequest(request);
 			if (reset) {
 				current = null;
+				currentResponsePrinter = null;
+				if (currentObserveRelation != null) {
+					currentObserveRelation = null;
+					ui = true;
+				}
 			}
-			return reset;
 		}
+		if (ui) {
+			setNormalButtonMode();
+		}
+		return reset;
 	}
 
 	private boolean isCurrentRequest(Request request) {
@@ -1121,27 +1165,30 @@ public class GUIController {
 		@Override
 		public void onResponse(final Response response) {
 			Platform.runLater(() -> {
-				if (resetCurrentRequest(request)) {
-					showEndpointContext(scheme, response.getSourceContext());
-					showResponse(response, request.getOptions().getUriPath());
-					updateUriBox(request.getURI());
-				}
-			});
-			super.onResponse(response);
-		}
-	}
-
-	private class NotificationPrinter implements NotificationListener {
-
-		@Override
-		public void onNotification(final Request request, final Response response) {
-			Platform.runLater(() -> {
-				if (isCurrentRequest(request)) {
-					if (observe != null && observe.matchRequest(request)) {
-						showResponse(response, request.getOptions().getUriPath());
+				ClientObserveRelation observerRelation = getObserverRelation();
+				if (observerRelation != null && observerRelation.matchRequest(request)) {
+					if (!observerRelation.onResponse(response)) {
+						LOG.info("CoAP-server drops out of order notification!");
+						return;
+					}
+					if (!response.isNotification()) {
+						LOG.info("CoAP-server stopped observe!");
 					}
 				}
+				if (response.isNotification()) {
+					if (!isCurrentRequest(request)) {
+						LOG.info("Drop unexpected notification!");
+						return;
+					}
+				} else if (!resetCurrentRequest(request)) {
+					LOG.info("Drop unexpected response!");
+					return;
+				}
+				showEndpointContext(scheme, response.getSourceContext());
+				showResponse(response, request.getOptions().getUriPath());
+				updateUriBox(request.getURI());
 			});
+			super.onResponse(response);
 		}
 	}
 
