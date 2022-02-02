@@ -52,6 +52,7 @@ import org.eclipse.californium.core.coap.MessageObserverAdapter;
 import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.core.observe.NotificationListener;
@@ -163,6 +164,8 @@ public class GUIController implements NotificationListener {
 	private Button observeButton;
 	@FXML
 	private Button discoverButton;
+	@FXML
+	private Button pingButton;
 
 	@FXML
 	private RadioMenuItem handshakeTypeMenuItemNo;
@@ -419,6 +422,7 @@ public class GUIController implements NotificationListener {
 		putButton.setDisable(disable);
 		deleteButton.setDisable(disable);
 		discoverButton.setDisable(disable);
+		pingButton.setDisable(disable && clientConfig.proxy == null);
 	}
 
 	private void setNormalButtonMode() {
@@ -496,6 +500,43 @@ public class GUIController implements NotificationListener {
 		});
 		LOG.info("Begin discovery, host={}", coapHost);
 		execute(request, coapHost + "/.well-known/core");
+	}
+
+	@FXML
+	private void pingRequest() {
+		final String host = getHost();
+		final Request request = Request.newPing();
+		request.setToken(Token.EMPTY);
+		request.addMessageObserver(new ResponsePrinter(request, CoAP.getSchemeFromUri(host)) {
+
+			@Override
+			public void onReject() {
+				Platform.runLater(() -> {
+					if (resetCurrentRequest(request)) {
+						LOG.info("ping rejected => success!");
+						mediaTypeView.setImage(blank);
+						String info = String.format("RST: mid=%d,source=%s", request.getMID(),
+								StringUtil.toDisplayString(request.getDestinationContext().getPeerAddress()));
+						responseTitle.setText(info);
+						responseArea.setPromptText("pong.");
+					}
+				});
+			}
+
+			public void onResponse(final Response response) {
+				Platform.runLater(() -> {
+					if (resetCurrentRequest(request)) {
+						showEndpointContext(scheme, response.getSourceContext());
+						showResponse(response, Collections.emptyList());
+						LOG.info("response for ping => failure!");
+						String text = responseTitle.getText();
+						responseTitle.setText("unexpected " + text);
+					}
+				});
+			}
+		});
+		LOG.info("Begin ping, host={}", host);
+		execute(request, host);
 	}
 
 	@FXML
