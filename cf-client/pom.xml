@@ -18,15 +18,15 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>org.eclipse.californium</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>scandium</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.californium</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>californium-core</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.californium</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>cf-cli</artifactId>
 		</dependency>
 		<dependency>
