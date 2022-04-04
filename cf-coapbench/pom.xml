@@ -35,7 +35,7 @@
 	</build>
 	<dependencies>
 		<dependency>
-			<groupId>org.eclipse.californium</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>californium-core</artifactId>
 		</dependency>
 		<dependency>
