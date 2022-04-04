@@ -1,0 +1,73 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
+
+	<!--
+	 * Copyright (c) 2022 Bosch.IO GmbH and others.
+	 * 
+	 * All rights reserved. This program and the accompanying materials
+	 * are made available under the terms of the Eclipse Public License v2.0
+	 * and Eclipse Distribution License v1.0 which accompany this distribution.
+	 * 
+	 * The Eclipse Public License is available at
+	 *    http://www.eclipse.org/legal/epl-v20.html
+	 * and the Eclipse Distribution License is available at
+	 *    http://www.eclipse.org/org/documents/edl-v10.html.
+	 * 
+	 * Contributors:
+	 *    Bosch.IO GmbH - initial creation, 
+	 *                    derived from enhanced-jar-with-dependencies.xml
+	-->
+    <id>jar-with-dependencies</id>
+
+	<!-- This descriptor behave like maven "jar-with-dependency" except it ensure 
+		that current module files have always priority on dependency files in case 
+		of duplicate. Excludes  -->
+	<formats>
+		<format>jar</format>
+	</formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+	<fileSets>
+		<fileSet>
+			<directory>${project.build.outputDirectory}</directory>
+			<outputDirectory/>
+		</fileSet>
+		<fileSet>
+			<directory>${project.build.directory}/generated-resources</directory>
+			<outputDirectory>licenses</outputDirectory>
+			<useDefaultExcludes>false</useDefaultExcludes>
+		</fileSet>
+	</fileSets>
+	<dependencySets>
+		<dependencySet>
+			<scope>runtime</scope>
+			<excludes>
+				<exclude>org.eclipse.californium:californium-legal</exclude>
+				<exclude>org.slf4j</exclude>
+			</excludes>
+			<outputDirectory>/</outputDirectory>
+			<useProjectArtifact>false</useProjectArtifact>
+			<unpack>true</unpack>
+			<unpackOptions>
+				<excludes>
+					<exclude>META-INF/**</exclude>
+					<exclude>org/slf4j/**</exclude>
+				</excludes>
+			</unpackOptions>
+		</dependencySet>
+		<dependencySet>
+			<scope>runtime</scope>
+			<includes>
+				<include>org.eclipse.californium:californium-legal</include>
+			</includes>
+			<outputDirectory>/META-INF/legal</outputDirectory>
+			<useProjectArtifact>false</useProjectArtifact>
+			<unpack>true</unpack>
+			<unpackOptions>
+				<excludes>
+					<exclude>META-INF/**</exclude>
+				</excludes>
+			</unpackOptions>
+		</dependencySet>
+	</dependencySets>
+</assembly>

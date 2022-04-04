@@ -48,6 +48,7 @@
 		<module>cf-polyfill</module>
 		<module>cf-rd</module>
 		<module>cf-server</module>
+		<module>cf-jmeter-plugin</module>
 	</modules>
 
 	<properties>
