@@ -32,6 +32,7 @@ import org.eclipse.californium.cli.ClientConfig.Payload;
 import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.core.config.CoapConfig.MatcherMode;
 import org.eclipse.californium.elements.config.Configuration;
+import org.eclipse.californium.elements.config.IntegerDefinition;
 import org.eclipse.californium.elements.config.Configuration.DefinitionsProvider;
 import org.eclipse.californium.elements.config.TcpConfig;
 import org.eclipse.californium.elements.util.StandardCharsets;
@@ -57,11 +58,21 @@ public class GUIClientFX extends Application {
 
 	private static final int DEFAULT_MAX_RESOURCE_SIZE = 8192;
 	private static final int DEFAULT_BLOCK_SIZE = 1024;
+	private static final int DEFAULT_MAX_LOG_LINES = 500;
+
+	/**
+	 * Definition for the maximum number of lines in the logging area.
+	 * 
+	 * @since 3.5
+	 */
+	private static final IntegerDefinition MAX_LOG_LINES = new IntegerDefinition("MAX_LOG_LINES",
+			"Maximum number of line in the logging area.", DEFAULT_MAX_LOG_LINES, 100);
 
 	private static DefinitionsProvider DEFAULTS = new DefinitionsProvider() {
 
 		@Override
 		public void applyDefinitions(Configuration config) {
+			config.set(MAX_LOG_LINES, DEFAULT_MAX_LOG_LINES);
 			config.set(CoapConfig.RESPONSE_MATCHING, MatcherMode.PRINCIPAL);
 			config.set(CoapConfig.MAX_RESOURCE_BODY_SIZE, DEFAULT_MAX_RESOURCE_SIZE);
 			config.set(CoapConfig.MAX_MESSAGE_SIZE, DEFAULT_BLOCK_SIZE);
@@ -153,10 +164,10 @@ public class GUIClientFX extends Application {
 		loader.setCharset(StandardCharsets.UTF_8);
 		Parent root = loader.load();
 		GUIController controller = loader.getController();
-		controller.initialize(primaryStage, clientConfig);
+		controller.initialize(primaryStage, clientConfig, clientConfig.configuration.get(MAX_LOG_LINES));
 		PrintStream ps = new PrintStream(controller.getLogStream());
 		System.setOut(ps);
-		System.setErr(ps);
+//		System.setErr(ps);
 		LOG.info("MainFX.controller={}", controller);
 		primaryStage.setTitle("CoAP Client");
 		primaryStage.setScene(new Scene(root));

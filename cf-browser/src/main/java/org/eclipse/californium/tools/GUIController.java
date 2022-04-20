@@ -40,6 +40,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
@@ -123,6 +124,9 @@ public class GUIController implements NotificationListener {
 	private ComboBox<String> uriBox;
 	@FXML
 	private TextArea logArea;
+	private int logAreaLines;
+	private int maxLogAreaLines;
+
 	@FXML
 	private Menu handshakeTypeMenu;
 	@FXML
@@ -228,9 +232,10 @@ public class GUIController implements NotificationListener {
 		}
 	}
 
-	public void initialize(Stage stage, GuiClientConfig config) {
+	public void initialize(Stage stage, GuiClientConfig config, int maxLogLines) {
 		this.stage = stage;
 		this.clientConfig = config;
+		this.maxLogAreaLines = maxLogLines;
 		boolean init = false;
 		if (config.uris != null) {
 			Collections.reverse(config.uris);
@@ -282,8 +287,26 @@ public class GUIController implements NotificationListener {
 
 			@Override
 			public void write(byte[] b, int off, int len) throws IOException {
-				String line = new String(b, off, len);
-				Platform.runLater(() -> logArea.appendText(line));
+				final String line = new String(b, off, len);
+				Platform.runLater(() -> {
+					if (maxLogAreaLines > 0 && logAreaLines >= maxLogAreaLines) {
+						String eol = StringUtil.lineSeparator();
+						int delete = 0;
+						int lines = 0;
+						int linesToDelete = maxLogAreaLines / 10;
+						for (CharSequence paragraph : logArea.getParagraphs()) {
+							++lines;
+							delete += paragraph.length() + eol.length();
+							if (lines >= linesToDelete) {
+								logArea.deleteText(0, delete);
+								logAreaLines -= lines;
+								break;
+							}
+						}
+					}
+					logAreaLines++;
+					logArea.appendText(line);
+				});
 			}
 		};
 	}
@@ -1083,6 +1106,7 @@ public class GUIController implements NotificationListener {
 		private final AtomicBoolean connect = new AtomicBoolean();
 		private final AtomicBoolean reconnect = new AtomicBoolean();
 		private final AtomicInteger retransmission = new AtomicInteger();
+		private final AtomicReference<Response> currentResponse = new AtomicReference<>();
 		protected final Request request;
 		protected final String scheme;
 		protected final boolean dtls;
@@ -1231,31 +1255,36 @@ public class GUIController implements NotificationListener {
 		}
 
 		@Override
-		public void onResponse(final Response response) {
-			Platform.runLater(() -> {
-				ClientObserveRelation observerRelation = getObserverRelation();
-				if (observerRelation != null && observerRelation.matchRequest(request)) {
-					if (!observerRelation.onResponse(response)) {
-						LOG.info("CoAP-server drops out of order notification!");
-						return;
+		public void onResponse(Response response) {
+			if (currentResponse.getAndSet(response) == null) {
+				Platform.runLater(() -> {
+					Response current = currentResponse.getAndSet(null);
+					if (current != null) {
+						ClientObserveRelation observerRelation = getObserverRelation();
+						if (observerRelation != null && observerRelation.matchRequest(request)) {
+							if (!observerRelation.onResponse(current)) {
+								LOG.info("CoAP-server drops out of order notification!");
+								return;
+							}
+							if (!current.isNotification()) {
+								LOG.info("CoAP-server stopped observe!");
+							}
+						}
+						if (current.isNotification()) {
+							if (!isCurrentRequest(request)) {
+								LOG.info("Drop unexpected notification!");
+								return;
+							}
+						} else if (!resetCurrentRequest(request)) {
+							LOG.info("Drop unexpected response!");
+							return;
+						}
+						showEndpointContext(scheme, current.getSourceContext());
+						showResponse(current, request.getOptions().getUriPath());
+						updateUriBox(request.getURI());
 					}
-					if (!response.isNotification()) {
-						LOG.info("CoAP-server stopped observe!");
-					}
-				}
-				if (response.isNotification()) {
-					if (!isCurrentRequest(request)) {
-						LOG.info("Drop unexpected notification!");
-						return;
-					}
-				} else if (!resetCurrentRequest(request)) {
-					LOG.info("Drop unexpected response!");
-					return;
-				}
-				showEndpointContext(scheme, response.getSourceContext());
-				showResponse(response, request.getOptions().getUriPath());
-				updateUriBox(request.getURI());
-			});
+				});
+			}
 			super.onResponse(response);
 		}
 	}
