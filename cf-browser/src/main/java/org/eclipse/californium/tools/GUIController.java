@@ -99,6 +99,7 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.text.Font;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -245,6 +246,11 @@ public class GUIController implements NotificationListener {
 		if (init) {
 			initializeUriBox();
 		}
+		Font monospaceFont = Font.font("monospace");
+		requestArea.setFont(monospaceFont);
+		responseArea.setFont(monospaceFont);
+		logArea.setFont(monospaceFont);
+		connectionArea.setFont(monospaceFont);
 		applyRequestContent();
 		if (config.contentType != null) {
 			selectContentTypeMenu(contentTypeMenu, config.contentType.contentType);
