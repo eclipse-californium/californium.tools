@@ -29,20 +29,23 @@ import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.core.Utils;
 import org.eclipse.californium.core.WebLink;
 import org.eclipse.californium.core.coap.CoAP;
+import org.eclipse.californium.core.coap.CoAP.Type;
 import org.eclipse.californium.core.coap.EndpointContextTracer;
 import org.eclipse.californium.core.coap.LinkFormat;
-import org.eclipse.californium.core.coap.CoAP.Type;
+import org.eclipse.californium.core.coap.MediaTypeRegistry;
+import org.eclipse.californium.core.coap.MessageObserverAdapter;
+import org.eclipse.californium.core.coap.Request;
+import org.eclipse.californium.core.coap.Response;
+import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.config.CoapConfig;
+import org.eclipse.californium.core.network.Endpoint;
+import org.eclipse.californium.core.network.EndpointManager;
+import org.eclipse.californium.core.observe.NotificationListener;
 import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.config.Configuration;
 import org.eclipse.californium.elements.config.Configuration.DefinitionsProvider;
 import org.eclipse.californium.elements.config.TcpConfig;
-import org.eclipse.californium.core.coap.MediaTypeRegistry;
-import org.eclipse.californium.core.coap.Request;
-import org.eclipse.californium.core.coap.Response;
-import org.eclipse.californium.core.coap.Token;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 
@@ -205,7 +208,7 @@ public class ConsoleClient {
 		if (clientConfig.contentType != null) {
 			request.getOptions().setContentFormat(clientConfig.contentType.contentType);
 		}
-		request.addMessageObserver(new EndpointContextTracer() {
+		final MessageObserverAdapter observer = new EndpointContextTracer() {
 			private boolean requestPrinted;
 
 			@Override
@@ -230,7 +233,9 @@ public class ConsoleClient {
 
 			@Override
 			public void onResponse(final Response response) {
-				System.out.println("Time elapsed (ms): " + TimeUnit.NANOSECONDS.toMillis(response.getApplicationRttNanos()));
+				if (response.getApplicationRttNanos() != null) {
+					System.out.println("Time elapsed (ms): " + TimeUnit.NANOSECONDS.toMillis(response.getApplicationRttNanos()));
+				}
 
 				// check of response contains resources
 				if (response.getOptions().isContentFormat(MediaTypeRegistry.APPLICATION_LINK_FORMAT)) {
@@ -257,9 +262,22 @@ public class ConsoleClient {
 			protected void failed() {
 				ready.countDown();
 			}
-		});
+		};
+		request.addMessageObserver(observer);
 
-		request.send();
+		final Endpoint endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(request.getScheme());
+		if (clientConfig.extendedMethod == ExtendedCode.OBSERVE) {
+			endpoint.addNotificationListener(new NotificationListener() {
+				@Override
+				public void onNotification(Request requestParam, Response response) {
+					if (requestParam.getToken().equals(request.getToken())) {
+						observer.onResponse(response);
+					}
+				}
+			});
+		}
+
+		request.send(endpoint);
 		return ready;
 	}
 
