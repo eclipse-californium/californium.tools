@@ -8,26 +8,27 @@ A command line application that uses the Californium libraries to act as `coap-c
 
 Prebuild jars are available from the Eclipse Repository.
 
-[Eclipse Repository - cf-client-3.2.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-client/3.2.0/cf-client-3.2.0.jar)
+[Eclipse Repository - cf-client-3.5.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-client/3.5.0/cf-client-3.5.0.jar)
 
-Additional experimental TCP/TLS support (copy it to the same folder as the cf-client-3.2.0.jar): 
-[Eclipse Repository - cf-cli-tcp-netty-3.2.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-cli-tcp-netty/3.2.0/cf-cli-tcp-netty-3.2.0.jar)
+Additional experimental TCP/TLS support (copy it to the same folder as the cf-client-3.5.0.jar): 
+[Eclipse Repository - cf-cli-tcp-netty-3.5.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-cli-tcp-netty/3.5.0/cf-cli-tcp-netty-3.5.0.jar)
 
 ## Run
 
 ```sh
-java -jar cf-client-3.2.0.jar
+java -jar cf-client-3.5.0.jar
 ```
 
 ## Arguments
 
 ```sh
-java -jar cf-client-3.2.0.jar -h
+java -jar cf-client-3.5.0.jar -h
 
-Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]
-                     subject-verification] [--payload-format] [-C=FILE]
+Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]sni]
+                     [--[no-]subject-verification] [--payload-format] [-C=FILE]
                      [--cid-length=<cidLength>]
                      [--dtls-auto-handshake=<dtlsAutoHandshake>]
+                     [--extended-master-secret=<extendedMasterSecretMode>]
                      [--extended-method=<extendedMethod>] [-i=<identity>]
                      [--local-port=<localPort>] [-m=<method>] [--mtu=<mtu>]
                      [--proxy=<proxy>] [--psk-index=<pskIndex>]
@@ -35,13 +36,13 @@ Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]
                      [--tag=<tag>] [-a=<authenticationModes>[:
                      <authenticationModes>...]]... [--cipher=<cipherSuites>[:
                      <cipherSuites>...]]... [--anonymous | [[-c=<certificate>]
-                     [--private-key=<privateKey>]]] [-t=<trusts>
-                     [-t=<trusts>]... | --trust-all] [-s=<text> |
-                     --secrethex=<hex> | --secret64=<base64>] [--json | --cbor
-                     | --xml | --text | --octets | --ctype=TYPE]
-                     [--payload=<text> | --payloadhex=<hex> |
-                     --payload64=<base64> | --payload-random=<size> |
-                     --payload-file=<filename>] [--con | --non] [URI]
+                     [--private-key=<privateKey>]]] [-t=<trusted> |
+                     --trust-all] [-s=<text> | --secrethex=<hex> |
+                     --secret64=<base64>] [--json | --cbor | --xml | --text |
+                     --octets | --ctype=TYPE] [--payload=<text> |
+                     --payloadhex=<hex> | --payload64=<base64> |
+                     --payload-random=<size> | --payload-file=<filename>]
+                     [--con | --non] [URI]
       [URI]                  destination URI. Default californium.
                                eclipseprojects.io
   -a, --auth=<authenticationModes>[:<authenticationModes>...]
@@ -50,7 +51,8 @@ Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]
       --anonymous            anonymous, no certificate.
   -c, --cert=<certificate>   certificate store. Format
                                keystore#hexstorepwd#hexkeypwd#alias or keystore.
-                               pem
+                               pem. If the private key is not contained, use
+                               '--private-key' to add it from a separate file.
   -C, --config=FILE          configuration file. Default Californium3.
                                properties.
       --cbor                 use cbor payload.
@@ -67,6 +69,8 @@ Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]
                                Value in format time[unit], e.g. the recommended
                                value of "30[s]". Or time|unit, e.g. 30s.
                                Default disabled.
+      --extended-master-secret=<extendedMasterSecretMode>
+                             Specify usage of extended master secret.
       --extended-method=<extendedMethod>
                              Extended method.
   -h, --help                 display a help message
@@ -79,6 +83,7 @@ Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]
       --loop                 keep console after request.
   -m, --method=<method>      use method. GET|PUT|POST|DELETE|FETCH|PATCH|IPATCH.
       --mtu=<mtu>            MTU.
+      --[no-]sni             enable/disable server-name indication.
       --[no-]subject-verification
                              enable/disable verification of server
                                certificate's subject.
@@ -106,7 +111,7 @@ Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]
   -s, --secret=<text>        PSK secret, UTF-8
       --secret64=<base64>    PSK secret, base64
       --secrethex=<hex>      PSK secret, hexadecimal
-  -t, --trusts=<trusts>      trusted certificates. Format
+  -t, --trusts=<trusted>     trusted certificates. Format
                                keystore#hexstorepwd#alias or truststore.pem
       --tag=<tag>            use logging tag.
       --text                 use plain-text payload.
