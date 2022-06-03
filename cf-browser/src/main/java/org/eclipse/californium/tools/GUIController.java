@@ -156,6 +156,8 @@ public class GUIController implements NotificationListener {
 	@FXML
 	private TreeView<PathElement> resourceTree;
 	@FXML
+	private TitledPane resourceTreePane;
+	@FXML
 	private ImageView mediaTypeView;
 	@FXML
 	private Button getButton;
@@ -198,6 +200,8 @@ public class GUIController implements NotificationListener {
 	private Random random = new Random();
 
 	private String requestText;
+
+	private String resourceTreeText;
 
 	private ConcurrentMap<InetSocketAddress, Date> connectionTime = new ConcurrentHashMap<>();
 
@@ -275,6 +279,7 @@ public class GUIController implements NotificationListener {
 				}
 			}
 		}
+		resourceTreeText = resourceTreePane.getText();
 	}
 
 	public OutputStream getLogStream() {
@@ -755,7 +760,7 @@ public class GUIController implements NotificationListener {
 		return uriBox.getSelectionModel().getSelectedItem().replace(" ", "%20");
 	}
 
-	private void populateTree(Set<WebLink> links, boolean clear) {
+	private boolean populateTree(Set<WebLink> links, boolean clear) {
 		boolean freshTree = false;
 		TreeItem<PathElement> rootItem = resourceTree.getRoot();
 		String currentHost = getHost();
@@ -765,17 +770,19 @@ public class GUIController implements NotificationListener {
 		}
 		if (freshTree || coapHost == null) {
 			coapHost = currentHost;
+			resourceTreePane.setText(resourceTreeText + ":\n" + coapHost);
 		} else if (!coapHost.equals(currentHost)) {
 			LOG.info("WebLinks from different host, tree not updated!");
 			LOG.info("{} != {}", coapHost, currentHost);
 			LOG.info("Use DISCOVER with new host to update the tree.");
-			return;
+			return false;
 		}
 		amendTree(rootItem, links);
 		if (freshTree) {
 			rootItem.setExpanded(true);
 			resourceTree.setRoot(rootItem);
 		}
+		return true;
 	}
 
 	private void removeChildren(List<String> path) {
@@ -945,12 +952,15 @@ public class GUIController implements NotificationListener {
 						if (path != null) {
 							removeChildren(path);
 						}
-						populateTree(webLinks, path == null);
+						boolean show = populateTree(webLinks, path == null);
 						StringBuilder links = new StringBuilder();
 						for (WebLink link : webLinks) {
 							links.append(link).append(StringUtil.lineSeparator());
 						}
 						text = links.toString();
+						if (!show) {
+							text = "(DISCOVER to update Resources for new host " +  getHost() + ")\n" + text;
+						}
 					} catch (Throwable t) {
 						LOG.error("Link response:", t);
 						text = getErrorMessage("Link-error: ", t.getMessage(), payload, null);

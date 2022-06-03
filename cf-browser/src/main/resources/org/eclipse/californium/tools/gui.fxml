@@ -313,6 +313,7 @@
 			BorderPane.alignment="TOP_CENTER">
 			<children>
 				<TitledPane animated="false"
+					fx:id="resourceTreePane"
 					maxHeight="1.7976931348623157E308"
 					maxWidth="1.7976931348623157E308" minHeight="100.0"
 					minWidth="100.0" prefHeight="390.0" prefWidth="141.0"
