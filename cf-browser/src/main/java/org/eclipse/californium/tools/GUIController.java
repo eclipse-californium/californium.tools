@@ -766,6 +766,9 @@ public class GUIController implements NotificationListener {
 		if (freshTree || coapHost == null) {
 			coapHost = currentHost;
 		} else if (!coapHost.equals(currentHost)) {
+			LOG.info("WebLinks from different host, tree not updated!");
+			LOG.info("{} != {}", coapHost, currentHost);
+			LOG.info("Use DISCOVER with new host to update the tree.");
 			return;
 		}
 		amendTree(rootItem, links);
@@ -809,8 +812,10 @@ public class GUIController implements NotificationListener {
 				FilteredList<TreeItem<PathElement>> filteredChildren = children
 						.filtered(treeItem -> part.equals(treeItem.getValue().uriElement));
 				if (filteredChildren.size() == 0) {
+					TreeItem<PathElement> parent = cur;
 					cur = new TreeItem<>(new PathElement(part));
 					children.add(cur);
+					parent.setExpanded(true);
 				} else {
 					cur = filteredChildren.get(0);
 				}
@@ -966,6 +971,11 @@ public class GUIController implements NotificationListener {
 				}
 			}
 			responseArea.setText(text);
+			if (size == 0) {
+				responseArea.setPromptText("No payload");
+			} else if (text.isEmpty()) {
+				responseArea.setPromptText("");
+			}
 		}
 		String info = String.format("%s: %s %s/%s, token=%s, mid=%d", type, response.getType(), response.getCode(),
 				response.getCode().name(), response.getTokenString(), response.getMID());
@@ -1212,6 +1222,7 @@ public class GUIController implements NotificationListener {
 				if (resetCurrentRequest(request)) {
 					LOG.info("cancel request");
 					responseArea.setText("");
+					responseArea.setPromptText("Request canceled.");
 					responseTitle.setText("Response: Canceled");
 					if (connect.get()) {
 						connectionArea.setText("");
@@ -1232,6 +1243,7 @@ public class GUIController implements NotificationListener {
 						text = error.getClass().getSimpleName();
 					}
 					responseArea.setText(text);
+					responseArea.setPromptText("Request send error.");
 					responseTitle.setText("Response: Send Error");
 					if (connect.get()) {
 						connectionArea.setText("");
