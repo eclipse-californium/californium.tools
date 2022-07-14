@@ -8,21 +8,21 @@ A command line application that uses the Californium libraries to act as `coap-c
 
 Prebuild jars are available from the Eclipse Repository.
 
-[Eclipse Repository - cf-client-3.5.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-client/3.5.0/cf-client-3.5.0.jar)
+[Eclipse Repository - cf-client-3.6.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-client/3.6.0/cf-client-3.6.0.jar)
 
-Additional experimental TCP/TLS support (copy it to the same folder as the cf-client-3.5.0.jar): 
-[Eclipse Repository - cf-cli-tcp-netty-3.5.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-cli-tcp-netty/3.5.0/cf-cli-tcp-netty-3.5.0.jar)
+Additional experimental TCP/TLS support (copy it to the same folder as the cf-client-3.6.0.jar): 
+[Eclipse Repository - cf-cli-tcp-netty-3.6.0.jar](https://repo.eclipse.org/content/repositories/californium-releases/org/eclipse/californium/cf-cli-tcp-netty/3.6.0/cf-cli-tcp-netty-3.6.0.jar)
 
 ## Run
 
 ```sh
-java -jar cf-client-3.5.0.jar
+java -jar cf-client-3.6.0.jar
 ```
 
 ## Arguments
 
 ```sh
-java -jar cf-client-3.5.0.jar -h
+java -jar cf-client-3.6.0.jar -h
 
 Usage: ConsoleClient [-hvV] [--help-auth] [--help-cipher] [--loop] [--[no-]sni]
                      [--[no-]subject-verification] [--payload-format] [-C=FILE]
