@@ -62,9 +62,13 @@ public class GUIDialog {
 
 	private Secret clone(Secret secret) {
 		Secret newSecret = new Secret();
-		newSecret.text = secret.text;
-		newSecret.hex = secret.hex;
-		newSecret.base64 = secret.base64;
+		if (secret.text == null && secret.hex == null && secret.base64 == null) {
+			newSecret.text = "";
+		} else {
+			newSecret.text = secret.text;
+			newSecret.hex = secret.hex;
+			newSecret.base64 = secret.base64;
+		}
 		return newSecret;
 	}
 
@@ -96,10 +100,6 @@ public class GUIDialog {
 			formatBase64.setSelected(true);
 			secret = secretConfig.base64;
 			format = "base64";
-		} else {
-			formatText.setSelected(true);
-			secret = "";
-			format = "text";
 		}
 		if (formatText.isSelected()) {
 			this.secret.setText(secret);
@@ -136,6 +136,9 @@ public class GUIDialog {
 		byte[] key;
 		try {
 			key = secretConfig.toKey();
+			if (key == null) {
+				key = Bytes.EMPTY;
+			}
 		} catch (IllegalArgumentException ex) {
 			logException(ex);
 			key = Bytes.EMPTY;
