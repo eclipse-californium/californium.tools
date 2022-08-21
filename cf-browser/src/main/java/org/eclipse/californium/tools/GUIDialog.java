@@ -135,7 +135,7 @@ public class GUIDialog {
 		viewToSecret();
 		byte[] key;
 		try {
-			key = secretConfig.toKey();
+			key = secretConfig.toKey().getEncoded();
 			if (key == null) {
 				key = Bytes.EMPTY;
 			}
@@ -157,6 +157,7 @@ public class GUIDialog {
 		} else if (selected == formatBase64) {
 			newSecret.base64 = StringUtil.byteArrayToBase64(key);
 		}
+		Bytes.clear(key);
 		secretConfig = newSecret;
 		secretToView();
 	}
@@ -170,7 +171,6 @@ public class GUIDialog {
 			clientConfig.identity = identity;
 			viewToSecret();
 			clientConfig.secret = secretConfig;
-			clientConfig.secretKey = secretConfig.toKey();
 			clientConfig.authenticationModes.clear();
 			clientConfig.authenticationModes.add(AuthenticationMode.PSK);
 			Endpoint endpoint = ClientInitializer.createEndpoint(clientConfig, null);
