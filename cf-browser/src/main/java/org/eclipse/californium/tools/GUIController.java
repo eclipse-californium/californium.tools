@@ -262,11 +262,11 @@ public class GUIController implements NotificationListener {
 		connectionArea.setFont(monospaceFont);
 		applyRequestContent();
 		if (config.contentType != null) {
-			selectContentTypeMenu(contentTypeMenu, config.contentType.contentType);
 			contentType = config.contentType.contentType;
-			selectContentTypeMenu(acceptMenu, config.contentType.contentType);
 			accept = config.contentType.contentType;
 		}
+		selectContentTypeMenu(contentTypeMenu, contentType);
+		selectContentTypeMenu(acceptMenu, accept);
 		if (config.messageType != null) {
 			confirmed = config.messageType.con;
 			String name = confirmed ? "CON" : "NON";
