@@ -1309,6 +1309,43 @@ public class GUIController implements NotificationListener {
 			}
 			super.onResponse(response);
 		}
+
+		@Override
+		public void onResponseHandlingError(Throwable error) {
+			Platform.runLater(() -> {
+				if (resetCurrentRequest(request)) {
+					LOG.info("response error", error);
+					mediaTypeView.setImage(blank);
+					String text = error.getMessage();
+					if (text == null) {
+						text = error.getClass().getSimpleName();
+					}
+					responseTitle.setText("Response: Receive Error");
+					responseArea.setText(text);
+					responseArea.setPromptText("Response receive error.");
+					if (connect.get()) {
+						connectionArea.setText("");
+					}
+				}
+			});
+			super.onResponseHandlingError(error);
+		}
+
+		@Override
+		protected void failed() {
+			Platform.runLater(() -> {
+				if (resetCurrentRequest(request)) {
+					LOG.info("failed");
+					responseTitle.setText("Response: Failed");
+					responseArea.setText("");
+					responseArea.setPromptText("Unknown reason.");
+					if (connect.get()) {
+						connectionArea.setText("");
+					}
+				}
+			});
+		}
+
 	}
 
 	public static String logMessage(Request request, Exception ex) {
