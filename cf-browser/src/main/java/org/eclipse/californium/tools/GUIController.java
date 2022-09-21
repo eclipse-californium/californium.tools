@@ -959,7 +959,7 @@ public class GUIController implements NotificationListener {
 						}
 						text = links.toString();
 						if (!show) {
-							text = "(DISCOVER to update Resources for new host " +  getHost() + ")\n" + text;
+							text = "(DISCOVER to update Resources for new host " + getHost() + ")\n" + text;
 						}
 					} catch (Throwable t) {
 						LOG.error("Link response:", t);
@@ -996,9 +996,7 @@ public class GUIController implements NotificationListener {
 		if (!mediaTypeShown) {
 			info += ", mediaType=" + mediaType;
 		}
-		if (response.getBytes() != null) {
-			info += ", " + response.getBytes().length + " bytes.";
-		}
+		info += ", " + response.getPayloadSize() + "/" + response.getMessageSize() + " bytes.";
 		responseTitle.setText(info);
 	}
 
@@ -1123,6 +1121,7 @@ public class GUIController implements NotificationListener {
 	private static final SimpleDateFormat FORMAT = new SimpleDateFormat("MMM d. HH:mm:ss [SSS]");
 
 	private class ResponsePrinter extends MessageObserverAdapter {
+
 		private final AtomicBoolean connect = new AtomicBoolean();
 		private final AtomicBoolean reconnect = new AtomicBoolean();
 		private final AtomicInteger retransmission = new AtomicInteger();
@@ -1145,9 +1144,9 @@ public class GUIController implements NotificationListener {
 					text.append(" ").append(request.getType());
 					text.append(", token=").append(request.getTokenString());
 					text.append(", mid=").append(request.getMID());
-					if (request.getBytes() != null) {
-						text.append(", ").append(request.getBytes().length).append(" bytes.");
-					}
+					text.append(", ").append(request.getPayloadSize());
+					text.append("/").append(request.getMessageSize());
+					text.append(" bytes.");
 					requestTitle.setText(text.toString());
 				}
 			});
@@ -1365,8 +1364,9 @@ public class GUIController implements NotificationListener {
 	}
 
 	private static class PathElement {
-		private String displayElement;
-		private String uriElement;
+
+		private final String displayElement;
+		private final String uriElement;
 
 		private PathElement(String uriElement) {
 			this.uriElement = uriElement;
