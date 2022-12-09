@@ -19,7 +19,7 @@
 
 	<properties>
 		<assembly.mainClass>org.eclipse.californium.tools.PolyfillProxy</assembly.mainClass>
-		<jetty.version>9.2.7.v20150116</jetty.version>
+		<jetty.version>9.4.50.v20221201</jetty.version>
 	</properties>
 
 	<build>
