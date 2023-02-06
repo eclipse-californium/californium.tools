@@ -47,6 +47,8 @@ import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
 import org.eclipse.californium.core.WebLink;
 import org.eclipse.californium.core.coap.ClientObserveRelation;
 import org.eclipse.californium.core.coap.CoAP;
+import org.eclipse.californium.core.coap.CoAP.Code;
+import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.coap.LinkFormat;
 import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.MessageObserverAdapter;
@@ -785,7 +787,7 @@ public class GUIController implements NotificationListener {
 		return true;
 	}
 
-	private void removeChildren(List<String> path) {
+	private void removeChildren(List<String> path, boolean removeChildren) {
 		String currentHost = getHost();
 		if (coapHost != null && coapHost.equals(currentHost)) {
 			TreeItem<PathElement> rootItem = resourceTree.getRoot();
@@ -803,8 +805,12 @@ public class GUIController implements NotificationListener {
 				}
 			}
 			if (cur != null) {
-				ObservableList<TreeItem<PathElement>> children = cur.getChildren();
-				children.clear();
+				if (removeChildren) {
+					ObservableList<TreeItem<PathElement>> children = cur.getChildren();
+					children.clear();
+				} else {
+					cur.getParent().getChildren().remove(cur);
+				}
 			}
 		}
 	}
@@ -950,7 +956,7 @@ public class GUIController implements NotificationListener {
 					try {
 						Set<WebLink> webLinks = LinkFormat.parse(text);
 						if (path != null) {
-							removeChildren(path);
+							removeChildren(path, true);
 						}
 						boolean show = populateTree(webLinks, path == null);
 						StringBuilder links = new StringBuilder();
@@ -985,6 +991,11 @@ public class GUIController implements NotificationListener {
 				responseArea.setPromptText("No payload");
 			} else if (text.isEmpty()) {
 				responseArea.setPromptText("");
+			}
+			if (response.getCode().equals(ResponseCode.DELETED)) {
+				if (path != null && !path.isEmpty()) {
+					removeChildren(path, false);
+				}
 			}
 		}
 		String info = String.format("%s: %s %s/%s, token=%s, mid=%d", type, response.getType(), response.getCode(),
@@ -1299,6 +1310,12 @@ public class GUIController implements NotificationListener {
 						} else if (!resetCurrentRequest(request)) {
 							LOG.info("Drop unexpected response!");
 							return;
+						}
+						if (current.getCode().equals(ResponseCode.DELETED)) {
+							if (!request.getCode().equals(Code.DELETE)) {
+								LOG.info("Drop unexpected DELETED response!");
+								return;
+							}
 						}
 						showEndpointContext(scheme, current.getSourceContext());
 						showResponse(current, request.getOptions().getUriPath());
