@@ -21,7 +21,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.build.javaVersion>1.8</project.build.javaVersion>
 		<snapshotDependencyAllowed>true</snapshotDependencyAllowed>
-		<jmeter.version>5.4.3</jmeter.version>
+		<jmeter.version>5.6.2</jmeter.version>
+		<enforcer.skip>false</enforcer.skip>
 	</properties>
 
 	<dependencies>
@@ -72,6 +73,21 @@
 					<descriptors>
 						<descriptor>enhanced-jar-without-logging.xml</descriptor>
 					</descriptors>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-enforcer-plugin</artifactId>
+				<configuration>
+					<rules>
+						<dependencyConvergence>
+							<excludes>
+								<exclude>org.jetbrains:annotations</exclude>
+								<exclude>org.jetbrains.kotlin:kotlin-stdlib-jdk8</exclude>
+								<exclude>org.jetbrains.kotlin:kotlin-stdlib-common</exclude>
+								<exclude>com.formdev:svgSalamander</exclude>
+							</excludes>
+						</dependencyConvergence>
+					</rules>
 				</configuration>
 			</plugin>
 		</plugins>
