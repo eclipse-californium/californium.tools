@@ -1,39 +1,41 @@
 maven/mavencentral/bsf/bsf/2.4.0, Apache-2.0, approved, clearlydefined
-maven/mavencentral/ch.qos.logback/logback-classic/1.2.11, EPL-1.0, approved, CQ13636
-maven/mavencentral/ch.qos.logback/logback-core/1.2.11, EPL-1.0, approved, CQ13635
-maven/mavencentral/com.fifesoft/rsyntaxtextarea/3.1.1, BSD-3-Clause, approved, clearlydefined
+maven/mavencentral/ch.qos.logback/logback-classic/1.2.13, EPL-1.0, approved, CQ13636
+maven/mavencentral/ch.qos.logback/logback-core/1.2.13, EPL-1.0, approved, CQ13635
+maven/mavencentral/com.fifesoft/rsyntaxtextarea/3.3.3, BSD-3-Clause, approved, clearlydefined
 maven/mavencentral/com.github.peteroupc/numbers/1.8.2, CC0-1.0, approved, clearlydefined
-maven/mavencentral/com.google.code.gson/gson/2.10, Apache-2.0, approved, #6159
-maven/mavencentral/com.thoughtworks.xstream/xstream/1.4.15, BSD-2-Clause, approved, CQ9591
+maven/mavencentral/com.google.auto.service/auto-service-annotations/1.1.1, Apache-2.0, approved, clearlydefined
+maven/mavencentral/com.google.code.gson/gson/2.10.1, Apache-2.0, approved, #6159
+maven/mavencentral/com.thoughtworks.xstream/xstream/1.4.20, BSD-2-Clause, approved, CQ9591
 maven/mavencentral/com.upokecenter/cbor/4.5.2, CC0-1.0, approved, clearlydefined
 maven/mavencentral/commons-logging/commons-logging/1.0.4, Apache-2.0, approved, CQ1029
-maven/mavencentral/info.picocli/picocli/4.7.0, Apache-2.0, approved, #4365
+maven/mavencentral/info.picocli/picocli/4.7.5, Apache-2.0, approved, #4365
+maven/mavencentral/io.github.x-stream/mxparser/1.2.2, LicenseRef-scancode-indiana-extreme, approved, #286
 maven/mavencentral/javax.annotation/javax.annotation-api/1.3.2, CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0, approved, CQ16910
 maven/mavencentral/javax.servlet/javax.servlet-api/3.1.0, (CDDL-1.1 OR GPL-2.0-only WITH Classpath-exception-2.0) AND Apache-2.0, approved, CQ7248
 maven/mavencentral/javax.websocket/javax.websocket-api/1.0, CDDL-1.0, approved, CQ7351
 maven/mavencentral/javax.websocket/javax.websocket-client-api/1.0, CDDL-1.0, approved, CQ7352
 maven/mavencentral/net.sf.jtidy/jtidy/r938, HTMLTIDY, approved, #1499
-maven/mavencentral/net.sf.saxon/Saxon-HE/9.9.1-8, NOASSERTION, restricted, clearlydefined
-maven/mavencentral/org.apache.jmeter/ApacheJMeter/5.4.3, Apache-2.0, approved, clearlydefined
-maven/mavencentral/org.apache.jmeter/ApacheJMeter_core/5.4.3, Apache-2.0, restricted, clearlydefined
-maven/mavencentral/org.apache.jmeter/ApacheJMeter_java/5.4.3, Apache-2.0, approved, clearlydefined
-maven/mavencentral/org.apache.jmeter/jorphan/5.4.3, Apache-2.0, approved, clearlydefined
-maven/mavencentral/org.apache.logging.log4j/log4j-1.2-api/2.17.0, Apache-2.0, approved, clearlydefined
-maven/mavencentral/org.apache.logging.log4j/log4j-api/2.17.0, Apache-2.0, approved, clearlydefined
-maven/mavencentral/org.apache.logging.log4j/log4j-core/2.17.0, Apache-2.0, approved, #2168
-maven/mavencentral/org.apache.logging.log4j/log4j-slf4j-impl/2.17.0, Apache-2.0, approved, #2537
-maven/mavencentral/org.apiguardian/apiguardian-api/1.1.0, Apache-2.0, approved, clearlydefined
-maven/mavencentral/org.eclipse.californium/californium-core/3.8.0-SNAPSHOT, , approved, science.californium
-maven/mavencentral/org.eclipse.californium/cf-cli/3.8.0-SNAPSHOT, , approved, science.californium
-maven/mavencentral/org.eclipse.californium/element-connector/3.8.0-SNAPSHOT, , approved, science.californium
-maven/mavencentral/org.eclipse.californium/scandium/3.8.0-SNAPSHOT, , approved, science.californium
-maven/mavencentral/org.eclipse.jetty.websocket/javax-websocket-client-impl/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
-maven/mavencentral/org.eclipse.jetty.websocket/javax-websocket-server-impl/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
-maven/mavencentral/org.eclipse.jetty.websocket/websocket-api/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
-maven/mavencentral/org.eclipse.jetty.websocket/websocket-client/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
-maven/mavencentral/org.eclipse.jetty.websocket/websocket-common/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
-maven/mavencentral/org.eclipse.jetty.websocket/websocket-server/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
-maven/mavencentral/org.eclipse.jetty.websocket/websocket-servlet/9.4.50.v20221201, EPL-2.0, approved, ecd.sprotty
+maven/mavencentral/net.sf.saxon/Saxon-HE/11.5, NOASSERTION, restricted, clearlydefined
+maven/mavencentral/org.apache.jmeter/ApacheJMeter/5.6.2, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.apache.jmeter/ApacheJMeter_core/5.6.2, Apache-2.0, restricted, clearlydefined
+maven/mavencentral/org.apache.jmeter/ApacheJMeter_java/5.6.2, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.apache.jmeter/jorphan/5.6.2, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.apache.logging.log4j/log4j-1.2-api/2.20.0, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.apache.logging.log4j/log4j-api/2.20.0, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.apache.logging.log4j/log4j-core/2.20.0, Apache-2.0 AND (Apache-2.0 AND LGPL-2.0-or-later), approved, #8809
+maven/mavencentral/org.apache.logging.log4j/log4j-slf4j-impl/2.20.0, Apache-2.0, restricted, clearlydefined
+maven/mavencentral/org.apiguardian/apiguardian-api/1.1.2, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.eclipse.californium/californium-core/3.11.0-20240130.075337-34, , approved, science.californium
+maven/mavencentral/org.eclipse.californium/cf-cli/3.11.0-20240130.075337-34, , approved, science.californium
+maven/mavencentral/org.eclipse.californium/element-connector/3.11.0-20240130.075337-34, , approved, science.californium
+maven/mavencentral/org.eclipse.californium/scandium/3.11.0-20240130.075337-34, , approved, science.californium
+maven/mavencentral/org.eclipse.jetty.websocket/javax-websocket-client-impl/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/javax-websocket-server-impl/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-api/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-client/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-common/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-server/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.eclipse.jetty.websocket/websocket-servlet/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
 maven/mavencentral/org.eclipse.jetty/jetty-annotations/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
 maven/mavencentral/org.eclipse.jetty/jetty-client/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
 maven/mavencentral/org.eclipse.jetty/jetty-http/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
@@ -47,6 +49,11 @@ maven/mavencentral/org.eclipse.jetty/jetty-util-ajax/9.4.50.v20221201, EPL-2.0 O
 maven/mavencentral/org.eclipse.jetty/jetty-util/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
 maven/mavencentral/org.eclipse.jetty/jetty-webapp/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
 maven/mavencentral/org.eclipse.jetty/jetty-xml/9.4.50.v20221201, EPL-2.0 OR Apache-2.0, approved, rt.jetty
+maven/mavencentral/org.jetbrains.kotlin/kotlin-stdlib-common/1.7.21, Apache-2.0, approved, clearlydefined
+maven/mavencentral/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.8.22, Apache-2.0, approved, #8807
+maven/mavencentral/org.jetbrains.kotlin/kotlin-stdlib-jdk8/1.8.22, Apache-2.0, approved, #8875
+maven/mavencentral/org.jetbrains.kotlin/kotlin-stdlib/1.8.22, Apache-2.0, approved, #8865
+maven/mavencentral/org.jetbrains/annotations/16.0.2, Apache-2.0, approved, CQ20715
 maven/mavencentral/org.openjfx/javafx-base/14, NOASSERTION, restricted, clearlydefined
 maven/mavencentral/org.openjfx/javafx-controls/14, NOASSERTION, restricted, clearlydefined
 maven/mavencentral/org.openjfx/javafx-fxml/14, NOASSERTION, restricted, clearlydefined
@@ -55,9 +62,9 @@ maven/mavencentral/org.ow2.asm/asm-commons/9.4, BSD-3-Clause, approved, clearlyd
 maven/mavencentral/org.ow2.asm/asm-tree/9.4, BSD-3-Clause, approved, clearlydefined
 maven/mavencentral/org.ow2.asm/asm/9.4, BSD-3-Clause, approved, clearlydefined
 maven/mavencentral/org.slf4j/slf4j-api/1.7.36, MIT, approved, CQ13368
+maven/mavencentral/org.xmlresolver/xmlresolver/4.6.4, , restricted, clearlydefined
 maven/mavencentral/oro/oro/2.0.8, Apache-1.1, approved, clearlydefined
-maven/mavencentral/xalan/serializer/2.7.2, Apache-2.0, approved, CQ16417
-maven/mavencentral/xalan/xalan/2.7.2, Apache-2.0, approved, CQ9587
+maven/mavencentral/xalan/serializer/2.7.3, Apache-2.0, approved, CQ16417
+maven/mavencentral/xalan/xalan/2.7.3, Apache-2.0, approved, CQ9587
 maven/mavencentral/xml-apis/xml-apis/1.4.01, Apache-2.0 OR LicenseRef-Public-Domain OR W3C, approved, CQ9621
 maven/mavencentral/xmlpull/xmlpull/1.1.3.1, LicenseRef-Public-Domain, approved, CQ1155
-maven/mavencentral/xpp3/xpp3_min/1.1.4c, , approved, CQ6229
