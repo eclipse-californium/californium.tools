@@ -18,6 +18,7 @@
 		<assembly.mainClass>org.eclipse.californium.tools.GUIClientFX</assembly.mainClass>
 		<!-- Lambdas make code much cleaner -->
 		<project.build.javaVersion>1.8</project.build.javaVersion>
+		<maven.compiler.release>8</maven.compiler.release>
 	</properties>
 
 	<dependencies>
@@ -92,6 +93,9 @@
 					<name>useToolchain</name>
 				</property>
 			</activation>
+			<properties>
+				<maven.compiler.release></maven.compiler.release>
+			</properties>
 			<build>
 				<plugins>
 					<plugin>
