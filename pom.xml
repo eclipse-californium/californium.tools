@@ -17,8 +17,8 @@
 	<name>Californium (Cf) Tools</name>
 	<description>CoAP tools</description>
 	<scm>
-		<developerConnection>scm:git:ssh://git@github.com/eclipse/californium.tools.git</developerConnection>
-		<url>https://github.com/eclipse/californium.tools</url>
+		<developerConnection>scm:git:ssh://git@github.com/eclipse-californium/californium.tools.git</developerConnection>
+		<url>https://github.com/eclipse-californium/californium.tools</url>
 		<tag>HEAD</tag>
 	</scm>
 
