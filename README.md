@@ -9,10 +9,15 @@ These are CoAP tools based on the
 * [cf-browser](cf-browser/README.md) - javaFx GUI based coap client
 * [cf-client](cf-client/README.md) - cli based coap client
 * [cf-jmeter-plugin](cf-jmeter-plugin/README.md) - jmeter plugin
+* cf-rd - coap resource directory
+
+These tools of the previous version 3 are not longer maintained:
+
 * cf-coapbench - benchmark (currently not maintained/tested, use californium/demo-apps/cf-extplugtest-client instead).
 * cf-polyfill - WebServer emits coap requests (currently not maintained/tested)
-* cf-rd - coap resource directory
 * cf-server - coap server
+
+On interest maintaining them, let us know.
 
 Maven
 -----

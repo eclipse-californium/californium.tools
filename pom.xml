@@ -44,10 +44,7 @@
 	<modules>
 		<module>cf-browser</module>
 		<module>cf-client</module>
-		<module>cf-coapbench</module>
-		<module>cf-polyfill</module>
 		<module>cf-rd</module>
-		<module>cf-server</module>
 		<module>cf-jmeter-plugin</module>
 	</modules>
 

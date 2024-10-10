@@ -1,6 +1,8 @@
 Cf-Polyfill
 ===========
 
+!!! Not longer maintained !!!
+
 This tool enables the creation of CoAP request using client-side JavaScript running in the Web browser.
 On the client side, it provides a CoAPRequest object with an API similar to the XMLHttpRequest.
 The CoAPRequest object forwards the request definition to a cross-proxy running on the clients machine using HTTP.
