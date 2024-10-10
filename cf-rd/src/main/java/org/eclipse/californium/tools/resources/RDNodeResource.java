@@ -347,13 +347,14 @@ public class RDNodeResource extends CoapResource {
 
 			// Loop over all sub-resources
 			for (Resource res : resource.getChildren()) {
+				WebLink webLink = LinkFormat.createWebLink(res);
 				StringBuilder sb = new StringBuilder();
-				if (LinkFormat.matches(res, query)) {
+				if (LinkFormat.matches(webLink, query)) {
 					// Convert Resource to string representation
 					sb.append("<"+getBase());
 					sb.append(res.getURI().substring(this.getURI().length()));
 					sb.append(">");
-					sb.append(LinkFormat.serializeResource(res).toString().replaceFirst("<.+>", ""));
+					sb.append(LinkFormat.serialize(webLink).toString().replaceFirst("<.+>", ""));
 				}
 				if (sb.length() != 0) {
 					resources.add(sb.toString());

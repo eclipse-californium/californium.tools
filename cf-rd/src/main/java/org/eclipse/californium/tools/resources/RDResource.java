@@ -23,9 +23,13 @@ import org.eclipse.californium.core.coap.MediaTypeRegistry;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
 import org.eclipse.californium.core.server.resources.CoapExchange;
 import org.eclipse.californium.core.server.resources.Resource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class RDResource extends CoapResource {
+
+	private final static Logger LOGGER = LoggerFactory.getLogger(RDResource.class);
 
 	public RDResource() {
 		this("rd");
