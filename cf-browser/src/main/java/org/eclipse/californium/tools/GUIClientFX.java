@@ -20,6 +20,7 @@ package org.eclipse.californium.tools;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,7 +36,6 @@ import org.eclipse.californium.elements.config.Configuration;
 import org.eclipse.californium.elements.config.IntegerDefinition;
 import org.eclipse.californium.elements.config.Configuration.DefinitionsProvider;
 import org.eclipse.californium.elements.config.TcpConfig;
-import org.eclipse.californium.elements.util.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
