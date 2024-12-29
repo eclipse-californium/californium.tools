@@ -57,7 +57,7 @@ public class RDResource extends CoapResource {
 
 		LOGGER.info("Registration request from "+exchange.getSourceAddress().getHostName()+":"+exchange.getSourcePort());
 		
-		List<String> query = exchange.getRequestOptions().getUriQuery();
+		List<String> query = exchange.getRequestOptions().getUriQueryStrings();
 		for (String q : query) {
 			
 			KeyValuePair kvp = KeyValuePair.parse(q);

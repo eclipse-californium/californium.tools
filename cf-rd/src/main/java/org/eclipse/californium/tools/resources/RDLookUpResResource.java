@@ -51,7 +51,7 @@ public class RDLookUpResResource extends CoapResource {
 		int page = 0;
 		List<String> toRemove = new ArrayList<String>(); 
 		
-		List<String> query = exchange.getRequestOptions().getUriQuery();
+		List<String> query = exchange.getRequestOptions().getUriQueryStrings();
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			

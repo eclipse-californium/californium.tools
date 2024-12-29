@@ -1319,7 +1319,8 @@ public class GUIController implements NotificationListener {
 							}
 						}
 						showEndpointContext(scheme, current.getSourceContext());
-						showResponse(current, request.getOptions().getUriPath());
+						List<String> path = OptionSet.getValues(request.getOptions().getUriPath());
+						showResponse(current, path);
 						updateUriBox(request.getURI());
 					}
 				});

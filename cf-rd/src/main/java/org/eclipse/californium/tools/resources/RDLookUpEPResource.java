@@ -54,7 +54,7 @@ public class RDLookUpEPResource extends CoapResource {
 		int page = 0;
 		HashMap<String, String> extraAttrsQuery = new HashMap<>();
 
-		List<String> query = exchange.getRequestOptions().getUriQuery();
+		List<String> query = exchange.getRequestOptions().getUriQueryStrings();
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			

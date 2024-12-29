@@ -90,7 +90,7 @@ public class RDNodeResource extends CoapResource {
 		boolean baseUpdated = false;
 		String newBase = "";
 
-		List<String> query = request.getOptions().getUriQuery();
+		List<String> query = request.getOptions().getUriQueryStrings();
 		for (String q : query) {
 
 			KeyValuePair kvp = KeyValuePair.parse(q);

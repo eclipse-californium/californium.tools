@@ -48,7 +48,7 @@ public class RDTagTopResource extends CoapResource {
 		String resourcePath = "";
 		String ep = "";
 		
-		List<String> query = exchange.getRequestOptions().getUriQuery();
+		List<String> query = exchange.getRequestOptions().getUriQueryStrings();
 		for (String q : query) {
 			KeyValuePair kvp = KeyValuePair.parse(q);
 			
@@ -138,7 +138,7 @@ public class RDTagTopResource extends CoapResource {
 
 		HashMap<String, String> payloadMap = new HashMap<String, String>();
 		String[] splittedPayload = exchange.getRequestText().split("\n");
-		List<String> query = exchange.getRequestOptions().getUriQuery();
+		List<String> query = exchange.getRequestOptions().getUriQueryStrings();
 
 		for (String q: query) {
 			if (q.startsWith("ep=")) {
