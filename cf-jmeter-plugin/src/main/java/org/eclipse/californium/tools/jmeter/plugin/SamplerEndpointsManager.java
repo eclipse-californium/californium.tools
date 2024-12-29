@@ -18,10 +18,9 @@ package org.eclipse.californium.tools.jmeter.plugin;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.jmeter.protocol.java.sampler.JavaSamplerClient;
 import org.eclipse.californium.core.coap.CoAP;
 import org.eclipse.californium.core.network.CoapEndpoint;
 import org.eclipse.californium.elements.Connector;
@@ -29,6 +28,7 @@ import org.eclipse.californium.elements.UDPConnector;
 import org.eclipse.californium.elements.config.Configuration;
 import org.eclipse.californium.elements.util.DaemonThreadFactory;
 import org.eclipse.californium.elements.util.ExecutorsUtil;
+import org.eclipse.californium.elements.util.ProtocolScheduledExecutorService;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
 import org.eclipse.californium.scandium.dtls.pskstore.AdvancedPskStore;
@@ -46,15 +46,13 @@ public class SamplerEndpointsManager {
 
 	public static final SamplerEndpointsManager INSTANCE = new SamplerEndpointsManager();
 
-	private final ScheduledExecutorService EXECUTOR = ExecutorsUtil
-			.newScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory("COAP#"));
-	private final ScheduledExecutorService TIMER = new ScheduledThreadPoolExecutor(2,
-			new DaemonThreadFactory("TIMER#"));
+	private final ProtocolScheduledExecutorService EXECUTOR = ExecutorsUtil
+			.newProtocolScheduledThreadPool(Runtime.getRuntime().availableProcessors(), new DaemonThreadFactory("COAP#"));
 
 	private final ConcurrentMap<String, SamplerEndpoint> ENDPOINTS = new ConcurrentHashMap<String, SamplerEndpoint>();
 
 	private SamplerEndpointsManager() {
-		TIMER.scheduleWithFixedDelay(new Runnable() {
+		EXECUTOR.scheduleBackgroundWithFixedDelay(new Runnable() {
 			int lastSize = 0;
 			int loops = 0;
 
@@ -103,7 +101,7 @@ public class SamplerEndpointsManager {
 			coapBuilder.setConfiguration(configuration);
 			coapBuilder.setConnector(connector);
 			CoapEndpoint endpoint = coapBuilder.build();
-			endpoint.setExecutors(EXECUTOR, TIMER);
+			endpoint.setExecutor(EXECUTOR);
 			samplerEndpoint = new SamplerEndpoint(key, endpoint, idleTimeMillis);
 			SamplerEndpoint previous = ENDPOINTS.putIfAbsent(key, samplerEndpoint);
 			if (previous == null) {

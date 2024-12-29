@@ -37,7 +37,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -197,7 +198,7 @@ public class GUIController implements NotificationListener {
 
 	private Endpoint endpoint;
 
-	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Timer#"));
+	private ExecutorService timer = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Timer#"));
 
 	private Random random = new Random();
 
@@ -504,7 +505,7 @@ public class GUIController implements NotificationListener {
 			if (endpoint != null) {
 				Request request = Request.newGet();
 				request.getOptions().setObserve(0);
-				observerRelation = new ClientObserveRelation(request, endpoint, timer);
+				observerRelation = new ClientObserveRelation(request, endpoint);
 				setCurrentRequest(request, observerRelation);
 				observeButton.setText("CANCEL");
 				setButtonsDisable(true);
