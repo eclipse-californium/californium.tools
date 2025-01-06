@@ -31,8 +31,8 @@ import org.eclipse.californium.elements.util.ExecutorsUtil;
 import org.eclipse.californium.elements.util.ProtocolScheduledExecutorService;
 import org.eclipse.californium.scandium.DTLSConnector;
 import org.eclipse.californium.scandium.config.DtlsConnectorConfig;
-import org.eclipse.californium.scandium.dtls.pskstore.AdvancedPskStore;
-import org.eclipse.californium.scandium.dtls.pskstore.AdvancedSinglePskStore;
+import org.eclipse.californium.scandium.dtls.pskstore.PskStore;
+import org.eclipse.californium.scandium.dtls.pskstore.SinglePskStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,9 +87,9 @@ public class SamplerEndpointsManager {
 		if (samplerEndpoint == null || samplerEndpoint.expired()) {
 			Connector connector;
 			if (CoAP.COAP_SECURE_URI_SCHEME.equals(scheme)) {
-				AdvancedPskStore psk = new AdvancedSinglePskStore(identity, secret);
+				PskStore psk = new SinglePskStore(identity, secret);
 				DtlsConnectorConfig.Builder dtlsBuilder = DtlsConnectorConfig.builder(configuration);
-				dtlsBuilder.setAdvancedPskStore(psk);
+				dtlsBuilder.setPskStore(psk);
 				DTLSConnector dtlsConnector = new DTLSConnector(dtlsBuilder.build());
 				dtlsConnector.setExecutor(EXECUTOR);
 				connector = dtlsConnector;
