@@ -1182,18 +1182,6 @@ public class GUIController implements NotificationListener {
 		@Override
 		public void onRetransmission() {
 			final int retry = retransmission.incrementAndGet();
-			if (dtls && !connect.get() && !reconnect.get() && retry == 2) {
-				if (isCurrentRequest(request)) {
-					EndpointContext destinationContext = request.getEffectiveDestinationContext();
-					String mode = destinationContext.getString(DtlsEndpointContext.KEY_HANDSHAKE_MODE);
-					if (mode == null) {
-						EndpointContext probeContext = MapBasedEndpointContext.addEntries(destinationContext,
-								DtlsEndpointContext.ATTRIBUTE_HANDSHAKE_MODE_PROBE);
-						request.setEffectiveDestinationContext(probeContext);
-						reconnect.set(true);
-					}
-				}
-			}
 			Platform.runLater(() -> {
 				if (isCurrentRequest(request)) {
 					LOG.info("retransmission");
