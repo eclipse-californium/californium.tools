@@ -15,8 +15,8 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapExchange;
 import org.eclipse.californium.core.CoapResource;
-import org.eclipse.californium.core.server.resources.CoapExchange;
 
 /**
  * This resource responds with a kind "hello world" to GET requests.

@@ -15,8 +15,8 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapExchange;
 import org.eclipse.californium.core.CoapResource;
-import org.eclipse.californium.core.server.resources.CoapExchange;
 
 /**
  * This class implements a resource that returns a larger amount of
