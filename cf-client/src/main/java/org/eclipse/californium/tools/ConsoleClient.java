@@ -40,7 +40,6 @@ import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.config.CoapConfig;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
-import org.eclipse.californium.core.observe.NotificationListener;
 import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.EndpointContext;
 import org.eclipse.californium.elements.config.Configuration;
@@ -267,12 +266,9 @@ public class ConsoleClient {
 
 		final Endpoint endpoint = EndpointManager.getEndpointManager().getDefaultEndpoint(request.getScheme());
 		if (clientConfig.extendedMethod == ExtendedCode.OBSERVE) {
-			endpoint.addNotificationListener(new NotificationListener() {
-				@Override
-				public void onNotification(Request requestParam, Response response) {
-					if (requestParam.getToken().equals(request.getToken())) {
-						observer.onResponse(response);
-					}
+			endpoint.addNotificationListener((requestParam, response) -> {
+				if (requestParam.getToken().equals(request.getToken())) {
+					observer.onResponse(response);
 				}
 			});
 		}

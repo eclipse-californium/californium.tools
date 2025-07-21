@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
@@ -60,7 +61,6 @@ import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.coap.Token;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
-import org.eclipse.californium.core.observe.NotificationListener;
 import org.eclipse.californium.elements.AddressEndpointContext;
 import org.eclipse.californium.elements.Definition;
 import org.eclipse.californium.elements.DtlsEndpointContext;
@@ -110,7 +110,7 @@ import javafx.stage.Stage;
 /**
  * The JavaFX controller for the gui.fxml template
  */
-public class GUIController implements NotificationListener {
+public class GUIController implements BiConsumer<Request, Response> {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
 	public static final String DEFAULT_URI = "coap://localhost:5683";
@@ -1035,7 +1035,7 @@ public class GUIController implements NotificationListener {
 	}
 
 	@Override
-	public void onNotification(Request request, Response response) {
+	public void accept(Request request, Response response) {
 		LOG.info("Received notification {}", response);
 		ClientObserveRelation observerRelation;
 		ResponsePrinter printer;
