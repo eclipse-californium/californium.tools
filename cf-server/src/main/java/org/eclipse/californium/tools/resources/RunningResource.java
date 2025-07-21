@@ -15,10 +15,10 @@
  ******************************************************************************/
 package org.eclipse.californium.tools.resources;
 
+import org.eclipse.californium.core.CoapExchange;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.CoapServer;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
-import org.eclipse.californium.core.server.resources.CoapExchange;
 
 /**
  * This resource contains two subresources: shutdown and restart. Send a POST

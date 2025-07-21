@@ -18,9 +18,9 @@ package org.eclipse.californium.tools.resources;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.eclipse.californium.core.CoapExchange;
 import org.eclipse.californium.core.CoapResource;
 import org.eclipse.californium.core.coap.CoAP.ResponseCode;
-import org.eclipse.californium.core.server.resources.CoapExchange;
 
 
 /**
