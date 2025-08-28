@@ -54,6 +54,22 @@
 			</unpackOptions>
 		</dependencySet>
 		<dependencySet>
+			<!-- add service loader descriptions -->
+			<scope>runtime</scope>
+			<excludes>
+				<exclude>org.openjfx:*</exclude>
+				<exclude>org.eclipse.californium:californium-legal</exclude>
+			</excludes>
+			<outputDirectory>/</outputDirectory>
+			<useProjectArtifact>false</useProjectArtifact>
+			<unpack>true</unpack>
+			<unpackOptions>
+				<includes>
+					<include>META-INF/services/**</include>
+				</includes>
+			</unpackOptions>
+		</dependencySet>
+		<dependencySet>
 			<scope>runtime</scope>
 			<includes>
 				<include>org.eclipse.californium:californium-legal</include>
