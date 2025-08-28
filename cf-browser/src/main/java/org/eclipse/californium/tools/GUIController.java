@@ -37,8 +37,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -110,7 +109,7 @@ import javafx.stage.Stage;
 /**
  * The JavaFX controller for the gui.fxml template
  */
-public class GUIController implements BiConsumer<Request, Response> {
+public class GUIController {
 
 	private static final Logger LOG = LoggerFactory.getLogger(GUIController.class.getName());
 	public static final String DEFAULT_URI = "coap://localhost:5683";
@@ -194,11 +193,31 @@ public class GUIController implements BiConsumer<Request, Response> {
 
 	private ClientObserveRelation currentObserveRelation;
 
+	private BiConsumer<Request, Response> notifier = new BiConsumer<Request, Response>() {
+
+		@Override
+		public void accept(Request request, Response response) {
+			LOG.info("Received notification {}", response);
+			ClientObserveRelation observerRelation;
+			ResponsePrinter printer;
+			synchronized (this) {
+				observerRelation = currentObserveRelation;
+				printer = currentResponsePrinter;
+			}
+			if (printer != null && observerRelation != null && observerRelation.matchRequest(request)) {
+				printer.onResponse(response);
+			} else {
+				LOG.info("notification not matching current observe");
+			}
+		}
+
+	};
+
 	private Attributes dtlsHandshakeMode;
 
 	private Endpoint endpoint;
 
-	private ExecutorService timer = Executors.newSingleThreadExecutor(new DaemonThreadFactory("Timer#"));
+	private ScheduledThreadPoolExecutor timer = new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("Timer#"));
 
 	private Random random = new Random();
 
@@ -432,11 +451,11 @@ public class GUIController implements BiConsumer<Request, Response> {
 			synchronized (this) {
 				if (this.endpoint != endpoint) {
 					if (this.endpoint != null) {
-						this.endpoint.removeNotificationListener(this);
+						this.endpoint.removeNotificationListener(notifier);
 					}
 					this.endpoint = endpoint;
 					if (this.endpoint != null) {
-						this.endpoint.addNotificationListener(this);
+						this.endpoint.addNotificationListener(notifier);
 					}
 				}
 			}
@@ -650,7 +669,17 @@ public class GUIController implements BiConsumer<Request, Response> {
 		Logger logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
 		if (ch.qos.logback.classic.Logger.class.isInstance(logger)) {
 			if (logEnabled.isSelected()) {
-				setRootLoggerLevel(Level.DEBUG);
+				Level level = Level.DEBUG;
+				for (MenuItem logItem : logLevelMenu.getItems()) {
+					if (logItem instanceof RadioMenuItem) {
+						RadioMenuItem radioItem = (RadioMenuItem) logItem;
+						if (radioItem.isSelected()) {
+							level = Level.toLevel(logItem.getText());
+							break;
+						}
+					}
+				}
+				setRootLoggerLevel(level);
 			} else {
 				setRootLoggerLevel(Level.OFF);
 			}
@@ -684,6 +713,9 @@ public class GUIController implements BiConsumer<Request, Response> {
 					break;
 				}
 			}
+		} else {
+			logEnabled.setDisable(true);
+			logLevelMenu.setDisable(true);
 		}
 	}
 
@@ -1032,22 +1064,6 @@ public class GUIController implements BiConsumer<Request, Response> {
 		}
 		builder.append(StringUtil.toDisplayString(payload, 256));
 		return builder.toString();
-	}
-
-	@Override
-	public void accept(Request request, Response response) {
-		LOG.info("Received notification {}", response);
-		ClientObserveRelation observerRelation;
-		ResponsePrinter printer;
-		synchronized (this) {
-			observerRelation = currentObserveRelation;
-			printer = currentResponsePrinter;
-		}
-		if (printer != null && observerRelation != null && observerRelation.matchRequest(request)) {
-			printer.onResponse(response);
-		} else {
-			LOG.info("notification not matching current observe");
-		}
 	}
 
 	private ClientObserveRelation getObserverRelation() {
