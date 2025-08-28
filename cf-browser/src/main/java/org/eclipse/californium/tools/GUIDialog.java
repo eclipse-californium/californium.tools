@@ -15,6 +15,8 @@
  ******************************************************************************/
 package org.eclipse.californium.tools;
 
+import javax.crypto.SecretKey;
+
 import org.eclipse.californium.cli.ClientInitializer;
 import org.eclipse.californium.cli.ConnectorConfig.AuthenticationMode;
 import org.eclipse.californium.cli.ConnectorConfig.Secret;
@@ -135,10 +137,8 @@ public class GUIDialog {
 		viewToSecret();
 		byte[] key;
 		try {
-			key = secretConfig.toKey().getEncoded();
-			if (key == null) {
-				key = Bytes.EMPTY;
-			}
+			SecretKey secretKey = secretConfig.toKey();
+			key = secretKey != null ? secretKey.getEncoded() : Bytes.EMPTY;
 		} catch (IllegalArgumentException ex) {
 			logException(ex);
 			key = Bytes.EMPTY;
