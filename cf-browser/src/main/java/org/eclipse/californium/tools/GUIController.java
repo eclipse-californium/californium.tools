@@ -598,13 +598,15 @@ public class GUIController {
 	@FXML
 	private void onSelectResource() {
 		TreeItem<PathElement> item = (TreeItem<PathElement>) resourceTree.getSelectionModel().getSelectedItem();
-		if (item == null) { // Handle case when no node in the tree is selected, just browsed into.
+		if (item == null) {
+			// Handle case when no node in the tree is selected, just browsed into.
 			return;
 		}
 		StringBuilder path = new StringBuilder(item.getValue().uriElement);
 		while (item.getParent() != null) {
 			item = item.getParent();
-			path.insert(0, item.getValue().uriElement + "/"); // Add slash separator to hierarchical paths.
+			// Add slash separator to hierarchical paths.
+			path.insert(0, item.getValue().uriElement + "/");
 		}
 		// Strip the extra leading slash added in the loop.
 		if (path.toString().startsWith("/")) {
@@ -971,58 +973,60 @@ public class GUIController {
 			// Display media type image icon and payload string
 			mediaTypeShown = showContentType(contentFormat);
 			String text = "";
-			boolean pretty = false;
-			if (contentFormat == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
-				text = StringUtil.byteArray2HexString(payload, StringUtil.NO_SEPARATOR, 256);
-			} else if (contentFormat == MediaTypeRegistry.APPLICATION_CBOR) {
-				try {
-					CBOREncodeOptions options = new CBOREncodeOptions("keepkeyorder=true");
-					text = CBORObject.DecodeFromBytes(payload, options).toString();
-					pretty = prettyJson.isSelected();
-				} catch (Throwable t) {
-					LOG.error("CBOR response:", t);
-					text = getErrorMessage("CBOR-error: ", t.getMessage(), payload, null);
-				}
-			} else {
-				text = response.getPayloadString();
-				if (contentFormat == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
+			if (size > 0) {
+				boolean pretty = false;
+				if (contentFormat == MediaTypeRegistry.APPLICATION_OCTET_STREAM) {
+					text = StringUtil.byteArray2HexString(payload, StringUtil.NO_SEPARATOR, 256);
+				} else if (contentFormat == MediaTypeRegistry.APPLICATION_CBOR) {
 					try {
-						Set<WebLink> webLinks = LinkFormat.parse(text);
-						if (path != null) {
-							removeChildren(path, true);
-						}
-						boolean show = populateTree(webLinks, path == null);
-						StringBuilder links = new StringBuilder();
-						for (WebLink link : webLinks) {
-							links.append(link).append(StringUtil.lineSeparator());
-						}
-						text = links.toString();
-						if (!show) {
-							text = "(DISCOVER to update Resources for new host " + getHost() + ")\n" + text;
-						}
+						CBOREncodeOptions options = new CBOREncodeOptions("keepkeyorder=true");
+						text = CBORObject.DecodeFromBytes(payload, options).toString();
+						pretty = prettyJson.isSelected();
 					} catch (Throwable t) {
-						LOG.error("Link response:", t);
-						text = getErrorMessage("Link-error: ", t.getMessage(), payload, null);
+						LOG.error("CBOR response:", t);
+						text = getErrorMessage("CBOR-error: ", t.getMessage(), payload, null);
 					}
-				} else if (contentFormat == MediaTypeRegistry.APPLICATION_JSON) {
-					pretty = prettyJson.isSelected();
+				} else {
+					text = response.getPayloadString();
+					if (contentFormat == MediaTypeRegistry.APPLICATION_LINK_FORMAT) {
+						try {
+							Set<WebLink> webLinks = LinkFormat.parse(text);
+							if (path != null) {
+								removeChildren(path, true);
+							}
+							boolean show = populateTree(webLinks, path == null);
+							StringBuilder links = new StringBuilder();
+							for (WebLink link : webLinks) {
+								links.append(link).append(StringUtil.lineSeparator());
+							}
+							text = links.toString();
+							if (!show) {
+								text = "(DISCOVER to update Resources for new host " + getHost() + ")\n" + text;
+							}
+						} catch (Throwable t) {
+							LOG.error("Link response:", t);
+							text = getErrorMessage("Link-error: ", t.getMessage(), payload, null);
+						}
+					} else if (contentFormat == MediaTypeRegistry.APPLICATION_JSON) {
+						pretty = prettyJson.isSelected();
+					}
 				}
-			}
-			if (pretty) {
-				try {
-					GsonBuilder builder = new GsonBuilder();
-					builder.setPrettyPrinting();
-					Gson gson = builder.create();
-					JsonElement jsonElement = JsonParser.parseString(text);
-					text = gson.toJson(jsonElement);
-				} catch (Throwable t) {
-					LOG.error("Pretty JSON printing:", t);
+				if (pretty) {
+					try {
+						GsonBuilder builder = new GsonBuilder();
+						builder.setPrettyPrinting();
+						Gson gson = builder.create();
+						JsonElement jsonElement = JsonParser.parseString(text);
+						text = gson.toJson(jsonElement);
+					} catch (Throwable t) {
+						LOG.error("Pretty JSON printing:", t);
+					}
 				}
 			}
 			responseArea.setText(text);
 			if (size == 0) {
 				responseArea.setPromptText("No payload");
-			} else if (text.isEmpty()) {
+			} else {
 				responseArea.setPromptText("");
 			}
 			if (response.getCode().equals(ResponseCode.DELETED)) {
