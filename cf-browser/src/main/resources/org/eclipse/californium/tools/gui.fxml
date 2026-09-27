@@ -119,6 +119,9 @@
 									toggleGroup="$acceptGroup" />
 							</items>
 						</Menu>
+						<CheckMenuItem fx:id="noResponse"
+							mnemonicParsing="false" onAction="#toggleNoResponse" selected="false"
+							text="Option No-Response" />
 					</items>
 				</Menu>
 				<Menu mnemonicParsing="false" text="Log">
