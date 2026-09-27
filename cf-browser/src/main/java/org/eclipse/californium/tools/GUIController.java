@@ -58,6 +58,7 @@ import org.eclipse.californium.core.coap.OptionSet;
 import org.eclipse.californium.core.coap.Request;
 import org.eclipse.californium.core.coap.Response;
 import org.eclipse.californium.core.coap.Token;
+import org.eclipse.californium.core.coap.option.NoResponseOption;
 import org.eclipse.californium.core.network.Endpoint;
 import org.eclipse.californium.core.network.EndpointManager;
 import org.eclipse.californium.elements.AddressEndpointContext;
@@ -183,6 +184,7 @@ public class GUIController {
 	private int accept = MediaTypeRegistry.UNDEFINED;
 	private int contentType = MediaTypeRegistry.TEXT_PLAIN;
 	private boolean confirmed = true;
+	private boolean noResponse = false;
 
 	private Image unknown;
 	private Image blank;
@@ -291,17 +293,21 @@ public class GUIController {
 		selectContentTypeMenu(acceptMenu, accept);
 		if (config.messageType != null) {
 			confirmed = config.messageType.con;
-			String name = confirmed ? "CON" : "NON";
-			for (MenuItem item : messageTypeMenu.getItems()) {
-				if (name.equals(item.getText())) {
-					if (item instanceof RadioMenuItem) {
-						((RadioMenuItem) item).setSelected(true);
-						break;
-					}
+			showMessageType(confirmed);
+		}
+		resourceTreeText = resourceTreePane.getText();
+	}
+
+	private void showMessageType(boolean confirmed) {
+		String name = confirmed ? "CON" : "NON";
+		for (MenuItem item : messageTypeMenu.getItems()) {
+			if (name.equals(item.getText())) {
+				if (item instanceof RadioMenuItem) {
+					((RadioMenuItem) item).setSelected(true);
+					break;
 				}
 			}
 		}
-		resourceTreeText = resourceTreePane.getText();
 	}
 
 	public OutputStream getLogStream() {
@@ -737,6 +743,16 @@ public class GUIController {
 	}
 
 	@FXML
+	private void toggleNoResponse() {
+		noResponse = !noResponse;
+		showMessageType(noResponse ? false : confirmed);
+		for (MenuItem item : messageTypeMenu.getItems()) {
+			item.setDisable(noResponse);
+		}
+		getButton.setDisable(noResponse);
+	}
+
+	@FXML
 	private void setContentType(ActionEvent event) {
 		MenuItem item = (MenuItem) event.getSource();
 		String text = item.getText();
@@ -899,7 +915,12 @@ public class GUIController {
 			if (accept != MediaTypeRegistry.UNDEFINED) {
 				request.getOptions().setAccept(accept);
 			}
-			request.setConfirmable(confirmed);
+			if (noResponse) {
+				request.setConfirmable(false);
+				request.getOptions().setNoResponse(NoResponseOption.SUPPRESS_ALL);
+			} else {
+				request.setConfirmable(confirmed);
+			}
 			execute(request, uri);
 		} catch (Exception ex) {
 			logException(request, ex);
@@ -918,9 +939,13 @@ public class GUIController {
 						Endpoint endpoint = getLocalEndpoint(scheme);
 						if (endpoint != null) {
 							setCurrentRequest(request, null);
-							responseTitle.setText("Response: none");
 							responseArea.setText("");
-							responseArea.setPromptText("No response yet ...");
+							responseTitle.setText("Response: none");
+							if (noResponse) {
+								responseArea.setPromptText("No response expected.");
+							} else {
+								responseArea.setPromptText("No response yet ...");
+							}
 							if (dtlsHandshakeMode != null && CoAP.COAP_SECURE_URI_SCHEME.equals(scheme)) {
 								EndpointContext context = request.getDestinationContext();
 								context = MapBasedEndpointContext.addEntries(context, dtlsHandshakeMode);
